@@ -263,7 +263,7 @@ function init_WC_Intrum_Gateway() {
 				$product = $item['data'];
 				$post = $item['data']->post;
 				//tax calculation for Finland
-				$price_before_tax =  $product->get_price_excluding_tax() ;
+				$price_before_tax =  wc_get_price_excluding_tax($product);
 				$line_tax = $item['line_tax'] / $item['quantity'];
 				$tax_status = $item[data]->tax_status;
 				$total = $item['data']->price;
@@ -313,10 +313,10 @@ function init_WC_Intrum_Gateway() {
 			$coData['SecretCode'] = $this->password;
 			$coData['ProductRimpsu'] = $coProdHash;
 
-	  		$coObject = $this->getCheckoutObject($coData);
-	        $response = $this->getCheckoutXML($coObject);
+	  	$coObject = $this->getCheckoutObject($coData);
+	    $response = $this->getCheckoutXML($coObject);
 
-            $xml = simplexml_load_string($response);
+      $xml = simplexml_load_string($response);
 
 
         }
