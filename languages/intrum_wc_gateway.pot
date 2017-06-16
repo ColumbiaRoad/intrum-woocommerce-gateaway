@@ -1,0 +1,223 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"Project-Id-Version: Intrum Justitia Woocommerce Gateway\n"
+"POT-Creation-Date: 2017-05-05 11:36+0300\n"
+"PO-Revision-Date: 2017-04-28 17:52+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.0.1\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-Flags-xgettext: --add-comments=translators:\n"
+"X-Poedit-WPHeader: intrum-woocommerce-gateway.php\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;"
+"esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;"
+"_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.js\n"
+
+#: intrum-woocommerce-gateway.php:81 intrum-woocommerce-gateway.php:169
+#: languages/intrum-woocommerce-gateway.php:84
+#: languages/intrum-woocommerce-gateway.php:180
+msgid "Intrum Justitia Yrityslasku"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:82
+#: languages/intrum-woocommerce-gateway.php:85
+msgid "Pay all at once or in installments"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:127
+#: languages/intrum-woocommerce-gateway.php:131
+msgid "What is Yrityslasku?"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:132
+#: languages/intrum-woocommerce-gateway.php:136
+msgid "Intrum Justitia Yrityslasku for Woocommerce"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:147
+#: languages/intrum-woocommerce-gateway.php:151
+msgid "Enable/Disable"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:149
+#: languages/intrum-woocommerce-gateway.php:153
+msgid "Enable Intrum Justitia Woocommerce Payment Gateway"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:153
+#: languages/intrum-woocommerce-gateway.php:164
+msgid "Enable purchase restrictions checking"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:155
+#: languages/intrum-woocommerce-gateway.php:166
+msgid "Use Company ID (Y-tunnus) for checking purchase restrictions"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:159
+#: languages/intrum-woocommerce-gateway.php:170
+msgid "Bypass TUPAS -identification"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:161
+#: languages/intrum-woocommerce-gateway.php:172
+msgid "Use Person ID (henkilötunnus) for checking purchase restrictions"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:165
+#: languages/intrum-woocommerce-gateway.php:176
+msgid "Title"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:167
+#: languages/intrum-woocommerce-gateway.php:178
+msgid "This controls the title which the user sees during checkout."
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:172
+#: languages/intrum-woocommerce-gateway.php:183
+msgid "Description"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:174
+#: languages/intrum-woocommerce-gateway.php:185
+msgid "This controls the description which the user sees during checkout."
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:175
+#: languages/intrum-woocommerce-gateway.php:186
+msgid "Pay in installments or all at once"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:178
+#: languages/intrum-woocommerce-gateway.php:189
+msgid "Merchant Id"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:180
+#: languages/intrum-woocommerce-gateway.php:191
+msgid "Add your merchant Id"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:184
+#: languages/intrum-woocommerce-gateway.php:195
+msgid "Password"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:186
+#: languages/intrum-woocommerce-gateway.php:197
+msgid "Add your password"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:190
+#: languages/intrum-woocommerce-gateway.php:201
+msgid "Language"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:192
+#: languages/intrum-woocommerce-gateway.php:203
+msgid "Automatic"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:192
+#: languages/intrum-woocommerce-gateway.php:203
+msgid "Finnish"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:192
+#: languages/intrum-woocommerce-gateway.php:203
+msgid "Swedish"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:192
+#: languages/intrum-woocommerce-gateway.php:203
+msgid "English"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:193
+#: languages/intrum-woocommerce-gateway.php:204
+msgid ""
+"Payment language (Automatic gets language from Wordpress. If Wordpress "
+"language is not Finnish or Swedish, then uses English)"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:197
+#: languages/intrum-woocommerce-gateway.php:208
+msgid "Tax code"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:199
+#: languages/intrum-woocommerce-gateway.php:210
+msgid ""
+"tax not included: 1 = 24% , 2 = 14%, 3 = 10%<br>tax included: 44 = 24%, 45 = "
+"14%, 46 = 10%<br>9 = 0%"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:495
+#: languages/intrum-woocommerce-gateway.php:469
+#: languages/intrum-woocommerce-gateway.php:498
+msgid "1234567-8"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:496
+#: languages/intrum-woocommerce-gateway.php:470
+#: languages/intrum-woocommerce-gateway.php:499
+msgid "Company ID"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:507
+#: languages/intrum-woocommerce-gateway.php:494
+msgid "120380-123C"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:508
+#: languages/intrum-woocommerce-gateway.php:495
+msgid "Person ID"
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:514
+#: languages/intrum-woocommerce-gateway.php:532
+msgid "Please enter value for Company ID."
+msgstr ""
+
+#: intrum-woocommerce-gateway.php:518
+#: languages/intrum-woocommerce-gateway.php:538
+msgid "Please enter value for Person ID."
+msgstr ""
+
+#: languages/intrum-woocommerce-gateway.php:157
+msgid "Test mode"
+msgstr ""
+
+#: languages/intrum-woocommerce-gateway.php:159
+msgid "Use test mode only"
+msgstr ""
+
+#: languages/intrum-woocommerce-gateway.php:160
+msgid ""
+"Use Person ID: 010120-0120 and select Intrum Justitia for identification."
+msgstr ""
+
+#: languages/intrum-woocommerce-gateway.php:544
+msgid "Yrityslasku is approved"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "Intrum Justitia Woocommerce Gateway"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Intrum Justitia gateway for woocommerce"
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Sivustonikkari"
+msgstr ""

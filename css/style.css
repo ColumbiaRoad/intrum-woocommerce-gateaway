@@ -1,0 +1,50 @@
+#wc_bank_fields {
+    margin-bottom: 30px;
+}
+
+#wc_bank_fields .bank_icon {
+    background-color: #fff;
+    color: #000;
+    border: 1pt solid #999;
+    -moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+    clear: none;
+    display: block;
+    float: left;
+    height: 120px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    padding: 0;
+    width: 180px;
+}
+
+#wc_bank_fields .bank_icon form {
+	width: 180px;
+	height: 120px;
+}
+
+#wc_bank_fields .bank_icon {
+	text-align: center;
+	font-family: arial;
+	font-size: 8pt;
+}
+
+#wc_bank_fields .bank_icon form span input {
+	margin-left: auto;
+	margin-right: auto;
+	display: block;
+	border: 1pt solid #f2f2f2;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	padding: 5px;
+	background-color: white;
+}
+
+#wc_bank_fields .bank_icon form span {
+    display: table-cell;
+    height: 92px;
+    vertical-align: middle;
+    width: 180px;
+}
