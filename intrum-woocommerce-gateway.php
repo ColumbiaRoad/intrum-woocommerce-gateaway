@@ -403,21 +403,11 @@ function init_WC_Intrum_Gateway() {
 			$sig .= $data['SecretCode'];
 			$signature = hash('sha512',str_replace(' ', '', $sig));
 
-            if($data['MAC'] === $signature) {
-                return true;
-            }
-            else {
-                return false;
-            }
+            return $data['MAC'] === $signature;
         }
 
         function isPaid($status) {
-            if($status == 0) {
-                return true;
-            }
-            else {
-                return false;
-            }
+			return($status == 0);
         }
     }
 
@@ -512,11 +502,10 @@ function intrum_checkout_person_id_process() {
 function intrum_thank_you($order){
 	$order = new WC_Order( $order);
 	$payment_gateway = wc_get_payment_gateway_by_order( $order );
-	if($payment_gateway->id == 'wc_intrum_gateway'):
-		$order->update_status('processing', __( 'Yrityslasku is approved', 'intrum_wc_gateway' ));
-		$order->reduce_order_stock();
-	else:
-	endif;
+	if($payment_gateway->id == 'wc_intrum_gateway') {
+		$order->update_status('completed', __( 'Yrityslasku is approved', 'intrum_wc_gateway' ));
+		wc_reduce_stock_levels($order);
+	}
 }
 
 
