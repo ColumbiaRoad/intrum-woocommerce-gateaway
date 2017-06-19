@@ -442,13 +442,22 @@ function add_company_id_field( $fields ) {
 
 function add_person__and_company_id_fields( $fields ) {
 	if(WC()->session->chosen_payment_method=='wc_intrum_gateway')
-	 $fields['billing']['billing_person_ID']['placeholder'] = __('120380-123C', 'intrum_wc_gateway');
-	 $fields['billing']['billing_person_ID']['label'] = __('Person ID', 'intrum_wc_gateway');
-	 $fields['billing']['billing_person_ID']['required'] = true;
+	 $fields['billing']['billing_person_ID'] = array(
+		 'label' => __('Person ID', 'intrum_wc_gateway'),
+		 'placeholder' => __('120380-123C', 'intrum_wc_gateway'),
+		 'required' => true,
+		 'class' => array('form-row-wide'),
+		 'clear' => true
+	 );
 
-	 $fields['billing']['billing_company_ID']['placeholder'] = __('1234567-8', 'intrum_wc_gateway');
-	 $fields['billing']['billing_company_ID']['label'] = __('Company ID', 'intrum_wc_gateway');
-	 $fields['billing']['billing_company_ID']['required'] = true;
+	 $fields['billing']['billing_company_ID'] = array(
+		 'label' => __('Company ID', 'intrum_wc_gateway'),
+		 'placeholder' => __('1234567-8', 'intrum_wc_gateway'),
+		 'required' => true,
+		 'class' => array('form-row-wide'),
+		 'clear' => true
+	 );
+
 	 $ordered = array(
 		"billing_first_name",
 		"billing_last_name",
