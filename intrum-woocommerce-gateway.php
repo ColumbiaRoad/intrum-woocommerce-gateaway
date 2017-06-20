@@ -27,6 +27,7 @@ function init_WC_Intrum_Gateway() {
 
 	add_filter('woocommerce_payment_gateways', 'add_intrum_gateway' );
 	add_action('woocommerce_thankyou', 'intrum_thank_you');
+	// add_action('woocommerce_payment_complete_order_status', 'complete_checkout');
 	add_action('woocommerce_checkout_update_order_meta', 'intrum_checkout_field_update_order_meta' );
  	add_action('woocommerce_checkout_process', 'intrum_checkout_person_id_process');
 	add_action('woocommerce_checkout_process', 'intrum_checkout_company_id_process');
@@ -71,7 +72,9 @@ function init_WC_Intrum_Gateway() {
 		private $ooenabled = true;
 		private $pienabled = false;
 		private $debugmode = true;
-		private $serveraddress = "https://maksu.intrum.com/Invoice_Test/Company?";
+		private $override_processing = false;
+		// Debug server
+		private $serveraddress = "http://localhost:9000/Invoice/Company?";
 
         function __construct() {
 
@@ -96,6 +99,7 @@ function init_WC_Intrum_Gateway() {
 			$this->password = str_replace(' ', '', $this->password);
  			if(strtolower($this->get_option('ooenabled'))=="no")$this->ooenabled = false;
  			if(strtolower($this->get_option('pienabled'))=="yes")$this->pienabled = true;
+ 			if(strtolower($this->get_option('override_processing'))=="yes")$this->override_processing = true;
  			if(strtolower($this->get_option('debug'))=="no")$this->serveraddress = "https://maksu.intrum.com/Invoice/Company?";
 			$this->tax = 44;//default 24% VAT (calculation happens later, if you are checking my code...)
 
@@ -129,6 +133,9 @@ function init_WC_Intrum_Gateway() {
             add_action('woocommerce_receipt_wc_intrum_gateway', array($this, 'receipt_page'));
 
 			add_action('wp_enqueue_scripts', array($this, 'intrum_checkout_css'));
+			if($this->override_processing) add_filter('woocommerce_payment_complete_order_status', 'override_processing');
+			
+			
         }
 		public function get_icon() {
 				$icon_html = "<img style='margin:0;width:150px;height:auto;' src='".plugins_url( 'yrityslasku_logopainike.png' , __FILE__ ). "' /><a style='float:right;font-size:.83em;' href='https://www.intrum.com/fi/fi/palvelut-yrityksille/verkkokauppa--ja-myymalaratkaisut/yrityslasku/'>".__('What is Yrityslasku?', 'intrum_wc_gateway'). "</a>";
@@ -163,13 +170,20 @@ function init_WC_Intrum_Gateway() {
 					'desc_tip' => __('Use Person ID: 010120-0120 and select Intrum Justitia for identification.', 'intrum_wc_gateway'),
                     'default' => 'yes'
                 ),
-	             'ooenabled' => array(
+				'override_processing' => array(
+                    'title' => __('Override "processing" status', 'intrum_wc_gateway'),					
+                    'type' => 'checkbox',
+                    'label' => __('Set paid orders directly to "completed" status', 'intrum_wc_gateway'),					
+					'desc_tip' => __('If enabled, paid orders are direclty set to "completed" instead of "processing", regardless of whether or not the product is digital', 'intrum_wc_gateway'),
+                    'default' => 'no'
+                ),
+	            'ooenabled' => array(
                     'title' => __('Enable purchase restrictions checking', 'intrum_wc_gateway'),
                     'type' => 'checkbox',
                     'desc_tip' => __('Use Company ID (Y-tunnus) for checking purchase restrictions', 'intrum_wc_gateway'),
                     'default' => 'yes'
                 ),
-		         'pienabled' => array(
+		        'pienabled' => array(
                     'title' => __('Bypass TUPAS -identification', 'intrum_wc_gateway'),
                     'type' => 'checkbox',
                     'desc_tip' => __('Use Person ID (henkilötunnus) for checking purchase restrictions', 'intrum_wc_gateway'),
@@ -324,6 +338,7 @@ function init_WC_Intrum_Gateway() {
        function process_payment($order_id) {
             global $woocommerce;
             $order = new WC_Order($order_id);
+			$order->update_status('pending', __( 'Yrityslasku is pending', 'intrum_wc_gateway' ));
             return array(
                 'result' => 'success',
                 'redirect' => $order->get_checkout_payment_url(true)
@@ -522,10 +537,27 @@ function intrum_thank_you($order){
 	$order = new WC_Order( $order);
 	$payment_gateway = wc_get_payment_gateway_by_order( $order );
 	if($payment_gateway->id == 'wc_intrum_gateway'):
-		$order->update_status('processing', __( 'Yrityslasku is approved', 'intrum_wc_gateway' ));
-		$order->reduce_order_stock();
+		// $order->update_status('processing', __( 'Yrityslasku is approved', 'intrum_wc_gateway' ));
+		// $order->reduce_order_stock();
+
+		// Simply call 'payment_complete' and let WooCommerce handle stock and status
+		$order->payment_complete();
 	else:
 	endif;
+}
+
+// Ignore status determined by WooCommerce and always set status to 'completed'
+function override_processing($string) {
+	return 'completed';
+}
+
+// Helper function for debugging
+function write_log ( $log )  {
+      if ( is_array( $log ) || is_object( $log ) ) {
+         error_log( print_r( $log, true ) );
+      } else {
+         error_log( $log );
+      }
 }
 
 
