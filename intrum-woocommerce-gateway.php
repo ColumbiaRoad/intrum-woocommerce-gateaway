@@ -277,7 +277,7 @@ function init_WC_Intrum_Gateway() {
 				$product = $item['data'];
 				$post = $item['data']->post;
 				//tax calculation for Finland
-				$price_before_tax =  wc_get_price_excluding_tax($product);
+				$price_before_tax = $product->get_price_excluding_tax();
 				$line_tax = $item['line_tax'] / $item['quantity'];
 				$tax_status = $item[data]->tax_status;
 				$total = $item['data']->price;
