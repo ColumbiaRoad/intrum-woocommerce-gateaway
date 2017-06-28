@@ -273,7 +273,6 @@ function init_WC_Intrum_Gateway() {
 			$coData['InstallmentCount'] = 1;
 			$coData['ProductList'] = array();
 
-			$i=1;
 			foreach($woocommerce->cart->cart_contents as $item){
 				$product = $item['data'];
 				$post = $item['data']->post;
@@ -316,18 +315,12 @@ function init_WC_Intrum_Gateway() {
 						$this->tax = 1;
 					}
 				}
-				$coData['ProductsList'].= "&Product$i=" . $post->post_title;
-				$coData['ProductsList'].= "&VatCode$i=" . $this->tax;
-				$coData['ProductsList'].= "&UnitPrice$i=" . $item['data']->price;
-				$coData['ProductsList'].= "&UnitAmount$i=" . $item['quantity'];
 
 				array_push($coData['ProductList'], array(
 					"Product"=>$post->post_title,
 					"VatCode"=>$this->tax,
 					"UnitPrice"=>$item['data']->price,
 					"UnitAmount"=>$item['quantity']));
-
-				$i++;
 			}
 
 			$coData['SecretCode'] = $this->password;
@@ -389,6 +382,7 @@ function init_WC_Intrum_Gateway() {
 				$p .= "&PersonId=".$data['PersonId'];
 				$p .= "&SkipTupasAuthentication=true";
 			}
+			write_log("getProductDetails: " . $this->getProductDetails($data));
 			$p .= "&InvoiceName=".$data['ReceiverName'] .
 			"&InvoiceFirstName=".$data['ReceiverFirstName'] .
 			"&InvoiceStreetAddress=".$data['ReceiverStreetAddress'] .
@@ -399,7 +393,7 @@ function init_WC_Intrum_Gateway() {
 			"&ReturnAddress=" . urlencode($data['ReturnAddress']).
 			"&CancelAddress=" . urlencode($data['CancelAddress']).
 			"&ErrorAddress=" . urlencode($data['ErrorAddress']).
-			$data['ProductsList'].
+			"&" . $this->getProductDetails($data).
 			"&SignatureMethod=" . $data['SignatureMethod'].			
 			"&Signature=$signature";
 			$file = plugin_dir_path( __FILE__ ). 'last_query.log';
@@ -435,7 +429,7 @@ function init_WC_Intrum_Gateway() {
 
 		function getProductDetailsForSignature($data) {
 			$details = "";
-			for ($i = 0; $i < count($data['ProductList']); $i++) {
+			for ($i = 0; $i < $data['InvoiceRowCount']; $i++) {
 				$details .= $data['ProductList'][$i]['Product'] . "&";
 				$details .= $data['ProductList'][$i]['VatCode'] . "&";
 				$details .= $data['ProductList'][$i]['UnitPrice'] . "&";
@@ -447,6 +441,16 @@ function init_WC_Intrum_Gateway() {
 
 		function getProductDetails($data) {
 			$details = "";
+			for ($i = 0; $i < $data['InvoiceRowCount']; $i++) {
+				// Needed because PHP can't handle adding two integers in a string concatenation
+				$nameIndex = $i + 1;
+				$details .= "Product$nameIndex=" . $data['ProductList'][$i]['Product'] . "&";
+				$details .= "VatCode$nameIndex=" . $data['ProductList'][$i]['VatCode'] . "&";
+				$details .= "UnitPrice$nameIndex=" . $data['ProductList'][$i]['UnitPrice'] . "&";
+				$details .= "UnitAmount$nameIndex=" . $data['ProductList'][$i]['UnitAmount'] . "&";
+			}
+			// Remove trailing "&" so $detail string can be used as expected
+			return rtrim($details, "&");
 		}
     }
 
