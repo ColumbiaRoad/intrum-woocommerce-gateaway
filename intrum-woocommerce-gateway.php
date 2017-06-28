@@ -32,6 +32,12 @@ function init_WC_Intrum_Gateway() {
  	add_action('woocommerce_checkout_process', 'intrum_checkout_person_id_process');
 	add_action('woocommerce_checkout_process', 'intrum_checkout_company_id_process');
 	add_action( 'woocommerce_after_checkout_form', 'add_intrum_js');
+	add_action('rest_api_init', function() {
+		register_rest_route( 'intrum-woocommerce-gateway/v1', '/payment-success', array(
+			'methods'  => 'POST',
+			'callback' => 'payment_success_route',
+		) );
+	});
 
     function add_intrum_gateway($methods) {
             $methods[] = 'WC_Intrum_Gateway';
@@ -133,9 +139,8 @@ function init_WC_Intrum_Gateway() {
             add_action('woocommerce_receipt_wc_intrum_gateway', array($this, 'receipt_page'));
 
 			add_action('wp_enqueue_scripts', array($this, 'intrum_checkout_css'));
+			
 			if($this->override_processing) add_filter('woocommerce_payment_complete_order_status', 'override_processing');
-			
-			
         }
 		public function get_icon() {
 				$icon_html = "<img style='margin:0;width:150px;height:auto;' src='".plugins_url( 'yrityslasku_logopainike.png' , __FILE__ ). "' /><a style='float:right;font-size:.83em;' href='https://www.intrum.com/fi/fi/palvelut-yrityksille/verkkokauppa--ja-myymalaratkaisut/yrityslasku/'>".__('What is Yrityslasku?', 'intrum_wc_gateway'). "</a>";
@@ -171,9 +176,9 @@ function init_WC_Intrum_Gateway() {
                     'default' => 'yes'
                 ),
 				'override_processing' => array(
-                    'title' => __('Override "processing" status', 'intrum_wc_gateway'),					
+                    'title' => __('Override "processing" status', 'intrum_wc_gateway'),
                     'type' => 'checkbox',
-                    'label' => __('Set paid orders directly to "completed" status', 'intrum_wc_gateway'),					
+                    'label' => __('Set paid orders directly to "completed" status', 'intrum_wc_gateway'),
 					'desc_tip' => __('If enabled, paid orders are direclty set to "completed" instead of "processing", regardless of whether or not the product is digital', 'intrum_wc_gateway'),
                     'default' => 'no'
                 ),
@@ -273,6 +278,7 @@ function init_WC_Intrum_Gateway() {
 			$co_data['InstallmentCount'] = 1;
 			$co_data['ProductList'] = array();
 
+			$i=1;
 			foreach($woocommerce->cart->cart_contents as $item){
 				$product = $item['data'];
 				$post = $item['data']->post;
@@ -489,7 +495,6 @@ function add_company_id_field( $fields ) {
 }
 
 function add_person__and_company_id_fields( $fields ) {
-	if(WC()->session->chosen_payment_method=='wc_intrum_gateway')
 	 $fields['billing']['billing_person_ID'] = array(
 		 'label' => __('Person ID', 'intrum_wc_gateway'),
 		 'placeholder' => __('120380-123C', 'intrum_wc_gateway'),
@@ -519,7 +524,6 @@ function add_person__and_company_id_fields( $fields ) {
 		"billing_country",
 		"billing_email",
 		"billing_phone"
-
 	);
 	foreach($ordered as $field){
 		$ordered_fields[$field] = $fields["billing"][$field];
@@ -583,4 +587,12 @@ function write_log ( $log )  {
 }
 
 
+function payment_success_route( WP_REST_Request $request ) {
+    // Do something with the $request
+	//$order = new WC_Order($order_id);
+
+    // Return either a WP_REST_Response or WP_Error object
+    //wp_redirect($order->get_checkout_order_received_url());
+	return 'joujou';
+}
 ?>
