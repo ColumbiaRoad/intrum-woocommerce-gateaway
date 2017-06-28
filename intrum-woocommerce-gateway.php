@@ -271,6 +271,7 @@ function init_WC_Intrum_Gateway() {
             $coData['InvoiceRowCount'] = count($woocommerce->cart->cart_contents);
 			$coData['SignatureMethod'] = 'SHA-512';
 			$coData['InstallmentCount'] = 1;
+			$coData['ProductList'] = array();
 
 			$i=1;
 			foreach($woocommerce->cart->cart_contents as $item){
@@ -279,7 +280,7 @@ function init_WC_Intrum_Gateway() {
 				//tax calculation for Finland
 				$price_before_tax = $product->get_price_excluding_tax();
 				$line_tax = $item['line_tax'] / $item['quantity'];
-				$tax_status = $item[data]->tax_status;
+				$tax_status = $item['data']->tax_status;
 				$total = $item['data']->price;
 				$tax_percentage = round((($total-$price_before_tax)/$price_before_tax)*100);
 				$included = false;
@@ -317,15 +318,19 @@ function init_WC_Intrum_Gateway() {
 				}
 				$coData['ProductsList'].= "&Product$i=" . $post->post_title;
 				$coData['ProductsList'].= "&VatCode$i=" . $this->tax;
-				$coData['ProductsList'].= "&UnitPrice$i=" . $item[data]->price;
+				$coData['ProductsList'].= "&UnitPrice$i=" . $item['data']->price;
 				$coData['ProductsList'].= "&UnitAmount$i=" . $item['quantity'];
 
-				$coProdHash .='&'.$post->post_title.'&'.$this->tax.'&'.$item[data]->price ."&" .$item['quantity'];
+				array_push($coData['ProductList'], array(
+					"Product"=>$post->post_title,
+					"VatCode"=>$this->tax,
+					"UnitPrice"=>$item['data']->price,
+					"UnitAmount"=>$item['quantity']));
+
 				$i++;
 			}
 
 			$coData['SecretCode'] = $this->password;
-			$coData['ProductProperties'] = $coProdHash;
 
 	  	$coObject = $this->getCheckoutObject($coData);
 	    $response = $this->getCheckoutXML($coObject);
@@ -371,9 +376,10 @@ function init_WC_Intrum_Gateway() {
 			//$sig .= $data['ReceiverZipCode']."&";
 			//$sig .= $data['ReceiverCountryCode']."&";
 			$sig .= $data['InvoiceRowCount']."&";
-			$sig .= $data['SignatureMethod'];
+			$sig .= $data['SignatureMethod']."&";
 			//$sig .= $data['InstallmentCount'];
-			$sig .= $data['ProductProperties']."&";
+			write_log("getProductDetailsForSignature: " . $this->getProductDetailsForSignature($data));
+			$sig .= $this->getProductDetailsForSignature($data)."&";
 			$sig .= $data['SecretCode'];
 			$signature = hash('sha512',str_replace(' ', '', $sig));
 			$p = "MerchantId=" . $data['MerchantId'] ;
@@ -415,8 +421,8 @@ function init_WC_Intrum_Gateway() {
 			$sig .= $data['ReturnAddress']."&";
 			$sig .= $data['CancelAddress']."&";
 			$sig .= $data['ErrorAddress']."&";
-			$sig .= $data['InvoiceRowCount'];
-			$sig .= $data['ProductProperties']."&";
+			$sig .= $data['InvoiceRowCount']."&";
+			$sig .= $this->getProductDetailsForSignature($data)."&";
 			$sig .= $data['SecretCode'];
 			$signature = hash('sha512',str_replace(' ', '', $sig));
 
@@ -426,6 +432,22 @@ function init_WC_Intrum_Gateway() {
         function isPaid($status) {
 			return($status == 0);
         }
+
+		function getProductDetailsForSignature($data) {
+			$details = "";
+			for ($i = 0; $i < count($data['ProductList']); $i++) {
+				$details .= $data['ProductList'][$i]['Product'] . "&";
+				$details .= $data['ProductList'][$i]['VatCode'] . "&";
+				$details .= $data['ProductList'][$i]['UnitPrice'] . "&";
+				$details .= $data['ProductList'][$i]['UnitAmount'] . "&";
+			}
+			// Remove trailing "&" so $detail string can be used as expected
+			return rtrim($details, "&");
+		}
+
+		function getProductDetails($data) {
+			$details = "";
+		}
     }
 
 }
