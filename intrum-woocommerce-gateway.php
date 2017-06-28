@@ -325,7 +325,7 @@ function init_WC_Intrum_Gateway() {
 			}
 
 			$coData['SecretCode'] = $this->password;
-			$coData['ProductRimpsu'] = $coProdHash;
+			$coData['ProductProperties'] = $coProdHash;
 
 	  	$coObject = $this->getCheckoutObject($coData);
 	    $response = $this->getCheckoutXML($coObject);
@@ -370,10 +370,10 @@ function init_WC_Intrum_Gateway() {
 			//$sig .= $data['ReceiverCity']."&";
 			//$sig .= $data['ReceiverZipCode']."&";
 			//$sig .= $data['ReceiverCountryCode']."&";
-			$sig .= $data['InvoiceRowCount'];
-			//$sig .= $data['SignatureMethod']."&";
+			$sig .= $data['InvoiceRowCount']."&";
+			$sig .= $data['SignatureMethod'];
 			//$sig .= $data['InstallmentCount'];
-			$sig .= $data['ProductRimpsu']."&";
+			$sig .= $data['ProductProperties']."&";
 			$sig .= $data['SecretCode'];
 			$signature = hash('sha512',str_replace(' ', '', $sig));
 			$p = "MerchantId=" . $data['MerchantId'] ;
@@ -393,7 +393,9 @@ function init_WC_Intrum_Gateway() {
 			"&ReturnAddress=" . urlencode($data['ReturnAddress']).
 			"&CancelAddress=" . urlencode($data['CancelAddress']).
 			"&ErrorAddress=" . urlencode($data['ErrorAddress']).
-			$data[ProductsList] . "&Signature=$signature";
+			$data['ProductsList'].
+			"&SignatureMethod=" . $data['SignatureMethod'].			
+			"&Signature=$signature";
 			$file = plugin_dir_path( __FILE__ ). 'last_query.log';
 			file_put_contents($file, $p);
 			return $p;
@@ -414,7 +416,7 @@ function init_WC_Intrum_Gateway() {
 			$sig .= $data['CancelAddress']."&";
 			$sig .= $data['ErrorAddress']."&";
 			$sig .= $data['InvoiceRowCount'];
-			$sig .= $data['ProductRimpsu']."&";
+			$sig .= $data['ProductProperties']."&";
 			$sig .= $data['SecretCode'];
 			$signature = hash('sha512',str_replace(' ', '', $sig));
 
