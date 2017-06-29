@@ -250,28 +250,28 @@ function init_WC_Intrum_Gateway() {
             $order_email = $order_data["_billing_email"][0];
             $order_phone = $order_data["_billing_phone"][0];
 
-            $coData = array();
+            $co_data = array();
             $coProdHash = "";
-            $coData['MerchantId'] = $this->merchant;
-            $coData['CompanyId'] = $order_companyID;
-            $coData['PersonId'] = $order_personID;
-            $coData['OrderNumber'] = $order_id;
-            $coData['ReturnAddress'] = $order->get_checkout_order_received_url();
-            $coData['CancelAddress'] = $order->get_cancel_order_url_raw();
-            $coData['ErrorAddress'] = $order->get_cancel_order_url_raw();
-            $coData['InvokeAddress'] = $order->get_checkout_order_received_url();
-            $coData['Language'] = $this->language;
-            $coData['ReceiverName'] = $order_lastname;
-            $coData['ReceiverFirstName'] = $order_firstname;
-            $coData['ReceiverExtraAddressRow'] = $order_adress2;
-            $coData['ReceiverStreetAddress'] = $order_adress;
-            $coData['ReceiverCity'] = $order_city;
-            $coData['ReceiverZipCode'] = $order_postcode;
-            $coData['ReceiverCountryCode'] = $order_countrycode;
-            $coData['InvoiceRowCount'] = count($woocommerce->cart->cart_contents);
-			$coData['SignatureMethod'] = 'SHA-512';
-			$coData['InstallmentCount'] = 1;
-			$coData['ProductList'] = array();
+            $co_data['MerchantId'] = $this->merchant;
+            $co_data['CompanyId'] = $order_companyID;
+            $co_data['PersonId'] = $order_personID;
+            $co_data['OrderNumber'] = $order_id;
+            $co_data['ReturnAddress'] = $order->get_checkout_order_received_url();
+            $co_data['CancelAddress'] = $order->get_cancel_order_url_raw();
+            $co_data['ErrorAddress'] = $order->get_cancel_order_url_raw();
+            $co_data['InvokeAddress'] = $order->get_checkout_order_received_url();
+            $co_data['Language'] = $this->language;
+            $co_data['ReceiverName'] = $order_lastname;
+            $co_data['ReceiverFirstName'] = $order_firstname;
+            $co_data['ReceiverExtraAddressRow'] = $order_adress2;
+            $co_data['ReceiverStreetAddress'] = $order_adress;
+            $co_data['ReceiverCity'] = $order_city;
+            $co_data['ReceiverZipCode'] = $order_postcode;
+            $co_data['ReceiverCountryCode'] = $order_countrycode;
+            $co_data['InvoiceRowCount'] = count($woocommerce->cart->cart_contents);
+			$co_data['SignatureMethod'] = 'SHA-512';
+			$co_data['InstallmentCount'] = 1;
+			$co_data['ProductList'] = array();
 
 			foreach($woocommerce->cart->cart_contents as $item){
 				$product = $item['data'];
@@ -316,22 +316,19 @@ function init_WC_Intrum_Gateway() {
 					}
 				}
 
-				array_push($coData['ProductList'], array(
+				array_push($co_data['ProductList'], array(
 					"Product"=>$post->post_title,
 					"VatCode"=>$this->tax,
 					"UnitPrice"=>$item['data']->price,
 					"UnitAmount"=>$item['quantity']));
 			}
 
-			$coData['SecretCode'] = $this->password;
+			$co_data['SecretCode'] = $this->password;
+			$co_query = $this->generate_checkout_query($co_data);
+			$response = $this->getCheckoutXML($co_query);
 
-	  	$coObject = $this->getCheckoutObject($coData);
-	    $response = $this->getCheckoutXML($coObject);
-
-      $xml = simplexml_load_string($response);
-
-
-        }
+			$xml = simplexml_load_string($response);
+    	}
 
        function process_payment($order_id) {
             global $woocommerce;
@@ -352,54 +349,36 @@ function init_WC_Intrum_Gateway() {
 			return $this->sendPost($d);
         }
 
-        function getCheckoutObject($data) {
-			$sig = "";
-			$sig .= $data['MerchantId']."&";
-			$sig .= $data['OrderNumber']."&";
-			$sig .= $data['ReturnAddress']."&";
-			$sig .= $data['CancelAddress']."&";
-			$sig .= $data['ErrorAddress']."&";
-			//$sig .= $data['InvokeAddress']."&";
-			//$sig .= $data['Language']."&";
-			//$sig .= $data['ReceiverName']."&";
-			//$sig .= $data['ReceiverFirstName']."&";
-			//$sig .= $data['ReceiverExtraAddressRow']."&";
-			//$sig .= $data['ReceiverStreetAddress']."&";
-			//$sig .= $data['ReceiverCity']."&";
-			//$sig .= $data['ReceiverZipCode']."&";
-			//$sig .= $data['ReceiverCountryCode']."&";
-			$sig .= $data['InvoiceRowCount']."&";
-			$sig .= $data['SignatureMethod']."&";
-			//$sig .= $data['InstallmentCount'];
-			write_log("getProductDetailsForSignature: " . $this->getProductDetailsForSignature($data));
-			$sig .= $this->getProductDetailsForSignature($data)."&";
-			$sig .= $data['SecretCode'];
-			$signature = hash('sha512',str_replace(' ', '', $sig));
-			$p = "MerchantId=" . $data['MerchantId'] ;
-			if(!$this->ooenabled && !$this->pienabled)$p .= "&CompanyId=".$data['CompanyId'];
-			if($this->pienabled){
-				$p .= "&CompanyId=".$data['CompanyId'];
-				$p .= "&PersonId=".$data['PersonId'];
-				$p .= "&SkipTupasAuthentication=true";
+        function generate_checkout_query($data) {
+			$query = "MerchantId={$data['MerchantId']}";
+			if(!$this->ooenabled && !$this->pienabled) {
+				$query .= "&CompanyId={$data['CompanyId']}";
 			}
-			write_log("getProductDetails: " . $this->getProductDetails($data));
-			$p .= "&InvoiceName=".$data['ReceiverName'] .
-			"&InvoiceFirstName=".$data['ReceiverFirstName'] .
-			"&InvoiceStreetAddress=".$data['ReceiverStreetAddress'] .
-			"&InvoiceCity=".$data['ReceiverCity'] .
-			"&InvoiceZipCode=".$data['ReceiverZipCode'] .
-			"&OrderNumber=" . $data['OrderNumber'].
-			"&InvoiceRowCount=" . $data['InvoiceRowCount'].
-			"&ReturnAddress=" . urlencode($data['ReturnAddress']).
-			"&CancelAddress=" . urlencode($data['CancelAddress']).
-			"&ErrorAddress=" . urlencode($data['ErrorAddress']).
-			"&" . $this->getProductDetails($data).
-			"&SignatureMethod=" . $data['SignatureMethod'].			
-			"&Signature=$signature";
+			if($this->pienabled) {
+				$query .= "&CompanyId={$data['CompanyId']}";
+				$query .= "&PersonId={$data['PersonId']}";
+				$query .= "&SkipTupasAuthentication=true";
+			}
+			$query .= "&Language={$data['Language']}" .
+			"&InvoiceName={$data['ReceiverName']}" .
+			"&InvoiceFirstName={$data['ReceiverFirstName']}" .
+			"&InvoiceStreetAddress={$data['ReceiverStreetAddress']}" .
+			"&InvoiceExtraAddressRow={$data['ReceiverExtraAddressRow']}" .
+			"&InvoiceCity={$data['ReceiverCity']}" .
+			"&InvoiceZipCode={$data['ReceiverZipCode']}" .
+			"&InvoiceCountryCode={$data['ReceiverCountryCode']}" .
+			"&OrderNumber={$data['OrderNumber']}" .
+			"&InvoiceRowCount={$data['InvoiceRowCount']}" .
+			"&ReturnAddress={$this->urlencode($data['ReturnAddress'])}" .
+			"&CancelAddress={$this->urlencode($data['CancelAddress'])}" .
+			"&ErrorAddress={$this->urlencode($data['ErrorAddress'])}" .
+			"&InvokeAddress={$this->urlencode($data['InvokeAddress'])}" .
+			"&{$this->get_product_details($data)}" .
+			"&SignatureMethod={$data['SignatureMethod']}" .
+			"&Signature={$this->generate_signature($data)}";
 			$file = plugin_dir_path( __FILE__ ). 'last_query.log';
-			file_put_contents($file, $p);
-			return $p;
-
+			file_put_contents($file, $query);
+			return $query;
         }
 
        function sendPost($post) {
@@ -416,7 +395,7 @@ function init_WC_Intrum_Gateway() {
 			$sig .= $data['CancelAddress']."&";
 			$sig .= $data['ErrorAddress']."&";
 			$sig .= $data['InvoiceRowCount']."&";
-			$sig .= $this->getProductDetailsForSignature($data)."&";
+			$sig .= $this->get_product_detail_values($data)."&";
 			$sig .= $data['SecretCode'];
 			$signature = hash('sha512',str_replace(' ', '', $sig));
 
@@ -427,30 +406,56 @@ function init_WC_Intrum_Gateway() {
 			return($status == 0);
         }
 
-		function getProductDetailsForSignature($data) {
+		private function generate_signature($data) {
+			$sig = "";
+			$sig .= "{$data['MerchantId']}&";
+			$sig .= "{$data['OrderNumber']}&";
+			$sig .= "{$data['ReturnAddress']}&";
+			$sig .= "{$data['CancelAddress']}&";
+			$sig .= "{$data['ErrorAddress']}&";
+			// Optional values
+			if(!empty($data['InvokeAddress'])) $sig .= "{$data['InvokeAddress']}&";
+			if(!empty($data['Language'])) $sig .= "{$data['Language']}&";
+
+			$sig .= "{$data['InvoiceRowCount']}&";
+			$sig .= "{$data['SignatureMethod']}&";
+			$sig .= "{$this->get_product_detail_values($data)}&";
+			$sig .= $data['SecretCode'];
+			// Remove hyphens so 'hash' function recognizes it. Example SHA-512 -> SHA512
+			$algorithm = str_replace('-', '', $data['SignatureMethod']);
+
+			return hash($algorithm, str_replace(' ', '', $sig));
+		}
+
+		private function get_product_detail_values($data) {
 			$details = "";
 			for ($i = 0; $i < $data['InvoiceRowCount']; $i++) {
-				$details .= $data['ProductList'][$i]['Product'] . "&";
-				$details .= $data['ProductList'][$i]['VatCode'] . "&";
-				$details .= $data['ProductList'][$i]['UnitPrice'] . "&";
-				$details .= $data['ProductList'][$i]['UnitAmount'] . "&";
+				$details .= "{$data['ProductList'][$i]['Product']}&";
+				$details .= "{$data['ProductList'][$i]['VatCode']}&";
+				$details .= "{$data['ProductList'][$i]['UnitPrice']}&";
+				$details .= "{$data['ProductList'][$i]['UnitAmount']}&";
 			}
 			// Remove trailing "&" so $detail string can be used as expected
 			return rtrim($details, "&");
 		}
 
-		function getProductDetails($data) {
+		private function get_product_details($data) {
 			$details = "";
 			for ($i = 0; $i < $data['InvoiceRowCount']; $i++) {
 				// Needed because PHP can't handle adding two integers in a string concatenation
 				$nameIndex = $i + 1;
-				$details .= "Product$nameIndex=" . $data['ProductList'][$i]['Product'] . "&";
-				$details .= "VatCode$nameIndex=" . $data['ProductList'][$i]['VatCode'] . "&";
-				$details .= "UnitPrice$nameIndex=" . $data['ProductList'][$i]['UnitPrice'] . "&";
-				$details .= "UnitAmount$nameIndex=" . $data['ProductList'][$i]['UnitAmount'] . "&";
+				$details .= "Product$nameIndex={$data['ProductList'][$i]['Product']}&";
+				$details .= "VatCode$nameIndex={$data['ProductList'][$i]['VatCode']}&";
+				$details .= "UnitPrice$nameIndex={$data['ProductList'][$i]['UnitPrice']}&";
+				$details .= "UnitAmount$nameIndex={$data['ProductList'][$i]['UnitAmount']}&";
 			}
 			// Remove trailing "&" so $detail string can be used as expected
 			return rtrim($details, "&");
+		}
+
+		// Wrapper for built-in 'urlencode', so it can be neatly called within HEREDOC strings
+		private function urlencode($str) {
+			return urlencode($str);
 		}
     }
 
