@@ -24,9 +24,7 @@ function init_WC_Intrum_Gateway() {
 	$c_id = false;
 	$p_id = false;
     load_plugin_textdomain('intrum_wc_gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages');
-
 	add_filter('woocommerce_payment_gateways', 'add_intrum_gateway' );
-	add_action('woocommerce_thankyou', 'intrum_thank_you');
 	// add_action('woocommerce_payment_complete_order_status', 'complete_checkout');
 	add_action('woocommerce_checkout_update_order_meta', 'intrum_checkout_field_update_order_meta' );
  	add_action('woocommerce_checkout_process', 'intrum_checkout_person_id_process');
@@ -257,6 +255,7 @@ function init_WC_Intrum_Gateway() {
 
             $co_data = array();
             $coProdHash = "";
+<<<<<<< HEAD
             $co_data['MerchantId'] = $this->merchant;
             $co_data['CompanyId'] = $order_companyID;
             $co_data['PersonId'] = $order_personID;
@@ -277,6 +276,34 @@ function init_WC_Intrum_Gateway() {
 			$co_data['SignatureMethod'] = 'SHA-512';
 			$co_data['InstallmentCount'] = 1;
 			$co_data['ProductList'] = array();
+=======
+            $coData['MerchantId'] = $this->merchant;
+            $coData['CompanyId'] = $order_companyID;
+            $coData['PersonId'] = $order_personID;
+            $coData['OrderNumber'] = $order_id;
+			$coData['ReturnAddress'] = createReturnURL("success");
+			error_log("what is there in variable? " . $coData['ReturnAddress']);
+            //$coData['ReturnAddress'] = "http://127.0.0.1:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=success";
+			//$coData['ReturnAddress'] = $order->get_checkout_order_received_url();
+			$coData['CancelAddress'] = "http://127.0.0.1:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=cancel";
+									  //http://localhost:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=success
+            //$coData['CancelAddress'] = $order->get_cancel_order_url_raw();
+			$coData['ErrorAddress'] = "http://127.0.0.1:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=cancel";
+            //$coData['ErrorAddress'] = $order->get_cancel_order_url_raw();
+			$coData['InvokeAddress'] = "http://127.0.0.1:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=success";
+            //$coData['InvokeAddress'] = $order->get_checkout_order_received_url();
+            $coData['Language'] = $this->language;
+            $coData['ReceiverName'] = $order_lastname;
+            $coData['ReceiverFirstName'] = $order_firstname;
+            $coData['ReceiverExtraAddressRow'] = $order_adress2;
+            $coData['ReceiverStreetAddress'] = $order_adress;
+            $coData['ReceiverCity'] = $order_city;
+            $coData['ReceiverZipCode'] = $order_postcode;
+            $coData['ReceiverCountryCode'] = $order_countrycode;
+            $coData['InvoiceRowCount'] = count($woocommerce->cart->cart_contents);
+			$coData['SignatureMethod'] = 'SHA-512';
+			$coData['InstallmentCount'] = 1;
+>>>>>>> one step more
 
 			$i=1;
 			foreach($woocommerce->cart->cart_contents as $item){
@@ -560,18 +587,6 @@ function intrum_checkout_person_id_process() {
 	if ( isset($_POST['billing_person_ID']) && !$_POST['billing_person_ID'] && ($_POST['payment_method'] == 'wc_intrum_gateway'))wc_add_notice( __( 'Please enter value for Person ID.','intrum_wc_gateway' ), 'error' );
 }
 
-function intrum_thank_you($order){
-	$order = new WC_Order( $order);
-	$payment_gateway = wc_get_payment_gateway_by_order( $order );
-	if($payment_gateway->id == 'wc_intrum_gateway') {
-		// $order->update_status('processing', __( 'Yrityslasku is approved', 'intrum_wc_gateway' ));
-		// $order->reduce_order_stock();
-
-		// Simply call 'payment_complete' and let WooCommerce handle stock and status
-		$order->payment_complete();
-	}
-}
-
 // Ignore status determined by WooCommerce and always set status to 'completed'
 function override_processing($string) {
 	return 'completed';
@@ -591,11 +606,16 @@ function check_signature_after_payment( WP_REST_Request $request ) {
 	return true;
 }
 
+/*
+* Checks signature and if success, changes order status
+* according https://docs.woocommerce.com/document/managing-orders/
+*/
 function payment_return_route( WP_REST_Request $request ) {
 	$signature_match = check_signature_after_payment($request);
 	$order_id = $request["OrderNumber"];
 	$order = new WC_Order($order_id);
 	if(!$signature_match) {
+		// request cannot be trusted, do not change order status
 		$redirect_url = $order->get_cancel_order_url_raw();
 		wp_redirect($redirect_url);
 		exit;
@@ -606,16 +626,25 @@ function payment_return_route( WP_REST_Request $request ) {
 	switch ($status) {
 		case "success":
 			$redirect_url = $order->get_checkout_order_received_url();
+			$order->payment_complete();
 			break;
 		case "cancel":
 			$redirect_url = $order->get_cancel_order_url_raw();
+			// when user goes to cancel url, order will be cancelled
 			break;
 		default:
 			$redirect_url = $order->get_cancel_order_url_raw();
+			// when user goes to cancel url, order will be cancelled
 			break;
 	}
 	error_log("REDIRECT TO: " . $redirect_url);
 	wp_redirect($redirect_url);
 	exit;
+}
+
+function createReturnURL($status) {
+	$url = get_site_url() . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=" . $status;
+	//$url = str_replace('localhost', '127.0.0.1', $url); //hack for local development
+	return $url;
 }
 ?>
