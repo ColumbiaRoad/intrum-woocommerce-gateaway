@@ -74,7 +74,7 @@ function init_WC_Intrum_Gateway() {
 		private $debugmode = true;
 		private $override_processing = false;
 		// Debug server
-		private $serveraddress = "http://localhost:9000/Invoice/Company?";
+		private $serveraddress = " https://maksu.intrum.com/Invoice_Test/Company?";
 
         function __construct() {
 
@@ -359,22 +359,22 @@ function init_WC_Intrum_Gateway() {
 				$query .= "&PersonId={$data['PersonId']}";
 				$query .= "&SkipTupasAuthentication=true";
 			}
-			$query .= "&Language={$data['Language']}" .
-			"&InvoiceName={$data['ReceiverName']}" .
+			// $query .= "&Language={$data['Language']}" .
+			$query .= "&InvoiceName={$data['ReceiverName']}" .
 			"&InvoiceFirstName={$data['ReceiverFirstName']}" .
 			"&InvoiceStreetAddress={$data['ReceiverStreetAddress']}" .
-			"&InvoiceExtraAddressRow={$data['ReceiverExtraAddressRow']}" .
+			// "&InvoiceExtraAddressRow={$data['ReceiverExtraAddressRow']}" .
 			"&InvoiceCity={$data['ReceiverCity']}" .
 			"&InvoiceZipCode={$data['ReceiverZipCode']}" .
-			"&InvoiceCountryCode={$data['ReceiverCountryCode']}" .
+			// "&InvoiceCountryCode={$data['ReceiverCountryCode']}" .
 			"&OrderNumber={$data['OrderNumber']}" .
 			"&InvoiceRowCount={$data['InvoiceRowCount']}" .
 			"&ReturnAddress={$this->urlencode($data['ReturnAddress'])}" .
 			"&CancelAddress={$this->urlencode($data['CancelAddress'])}" .
 			"&ErrorAddress={$this->urlencode($data['ErrorAddress'])}" .
-			"&InvokeAddress={$this->urlencode($data['InvokeAddress'])}" .
+			// "&InvokeAddress={$this->urlencode($data['InvokeAddress'])}" .
 			"&{$this->get_product_details($data)}" .
-			"&SignatureMethod={$data['SignatureMethod']}" .
+			// "&SignatureMethod={$data['SignatureMethod']}" .
 			"&Signature={$this->generate_signature($data)}";
 			$file = plugin_dir_path( __FILE__ ). 'last_query.log';
 			file_put_contents($file, $query);
@@ -414,11 +414,11 @@ function init_WC_Intrum_Gateway() {
 			$sig .= "{$data['CancelAddress']}&";
 			$sig .= "{$data['ErrorAddress']}&";
 			// Optional values
-			if(!empty($data['InvokeAddress'])) $sig .= "{$data['InvokeAddress']}&";
-			if(!empty($data['Language'])) $sig .= "{$data['Language']}&";
+			// if(!empty($data['InvokeAddress'])) $sig .= "{$data['InvokeAddress']}&";
+			// if(!empty($data['Language'])) $sig .= "{$data['Language']}&";
 
 			$sig .= "{$data['InvoiceRowCount']}&";
-			$sig .= "{$data['SignatureMethod']}&";
+			// $sig .= "{$data['SignatureMethod']}&";
 			$sig .= "{$this->get_product_detail_values($data)}&";
 			$sig .= $data['SecretCode'];
 			// Remove hyphens so 'hash' function recognizes it. Example SHA-512 -> SHA512
