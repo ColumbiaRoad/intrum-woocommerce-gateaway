@@ -33,9 +33,9 @@ function init_WC_Intrum_Gateway() {
 	add_action('woocommerce_checkout_process', 'intrum_checkout_company_id_process');
 	add_action( 'woocommerce_after_checkout_form', 'add_intrum_js');
 	add_action('rest_api_init', function() {
-		register_rest_route( 'intrum-woocommerce-gateway/v1', '/payment-success', array(
+		register_rest_route( 'intrum-woocommerce-gateway/v1', '/payment', array(
 			'methods'  => 'POST',
-			'callback' => 'payment_success_route',
+			'callback' => 'payment_return_route',
 		) );
 	});
 
@@ -586,13 +586,36 @@ function write_log ( $log )  {
       }
 }
 
+function check_signature_after_payment( WP_REST_Request $request ) {
+	//check signature here
+	return true;
+}
 
-function payment_success_route( WP_REST_Request $request ) {
-    // Do something with the $request
-	//$order = new WC_Order($order_id);
+function payment_return_route( WP_REST_Request $request ) {
+	$signature_match = check_signature_after_payment($request);
+	$order_id = $request["OrderNumber"];
+	$order = new WC_Order($order_id);
+	if(!$signature_match) {
+		$redirect_url = $order->get_cancel_order_url_raw();
+		wp_redirect($redirect_url);
+		exit;
+	}
 
-    // Return either a WP_REST_Response or WP_Error object
-    //wp_redirect($order->get_checkout_order_received_url());
-	return 'joujou';
+	$status = $request->get_param("status");
+	$redirect_url = "";
+	switch ($status) {
+		case "success":
+			$redirect_url = $order->get_checkout_order_received_url();
+			break;
+		case "cancel":
+			$redirect_url = $order->get_cancel_order_url_raw();
+			break;
+		default:
+			$redirect_url = $order->get_cancel_order_url_raw();
+			break;
+	}
+	error_log("REDIRECT TO: " . $redirect_url);
+	wp_redirect($redirect_url);
+	exit;
 }
 ?>
