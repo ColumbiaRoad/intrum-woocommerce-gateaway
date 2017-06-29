@@ -1,15 +1,9 @@
 <?php
-require 'plugin-update-checker/plugin-update-checker.php';
-$MyUpdateChecker = PucFactory::buildUpdateChecker(
-    'https://sivustonikkarit.com/plugin_updater/intrum-woocommerce-gateway.json',
-    __FILE__,
-	'intrum-woocommerce-gateway'
-);
 /**
 * Plugin Name: Intrum Justitia Woocommerce Gateway
 * Description: Intrum Justitia gateway for Woocommerce
-* Version: 1.3
-* Author: Sivustonikkari
+* Version: 1.4
+* Author: Columbia Road Oy
 */
 // Prevent direct access
 if (!defined('ABSPATH')) {
@@ -21,11 +15,8 @@ function init_WC_Intrum_Gateway() {
     if (!class_exists( 'WC_Payment_Gateway')) {
         return;
     }
-	$c_id = false;
-	$p_id = false;
     load_plugin_textdomain('intrum_wc_gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages');
 	add_filter('woocommerce_payment_gateways', 'add_intrum_gateway' );
-	// add_action('woocommerce_payment_complete_order_status', 'complete_checkout');
 	add_action('woocommerce_checkout_update_order_meta', 'intrum_checkout_field_update_order_meta' );
  	add_action('woocommerce_checkout_process', 'intrum_checkout_person_id_process');
 	add_action('woocommerce_checkout_process', 'intrum_checkout_company_id_process');
@@ -125,12 +116,9 @@ function init_WC_Intrum_Gateway() {
 
 			if(!$this->ooenabled && !$this->pienabled){
 				add_filter('woocommerce_checkout_fields' , 'add_company_id_field' );
-				$c_id =true;
 			}
 			if($this->pienabled){
 				add_filter('woocommerce_checkout_fields' , 'add_person__and_company_id_fields' );
-				$c_id =true;
-				$p_id =true;
 			}
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
 
@@ -282,15 +270,13 @@ function init_WC_Intrum_Gateway() {
             $coData['PersonId'] = $order_personID;
             $coData['OrderNumber'] = $order_id;
 			$coData['ReturnAddress'] = createReturnURL("success");
-			error_log("what is there in variable? " . $coData['ReturnAddress']);
             //$coData['ReturnAddress'] = "http://127.0.0.1:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=success";
 			//$coData['ReturnAddress'] = $order->get_checkout_order_received_url();
-			$coData['CancelAddress'] = "http://127.0.0.1:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=cancel";
-									  //http://localhost:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=success
+			$coData['CancelAddress'] = createReturnURL("cancel");
             //$coData['CancelAddress'] = $order->get_cancel_order_url_raw();
-			$coData['ErrorAddress'] = "http://127.0.0.1:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=cancel";
+			$coData['ErrorAddress'] = createReturnURL("cancel");
             //$coData['ErrorAddress'] = $order->get_cancel_order_url_raw();
-			$coData['InvokeAddress'] = "http://127.0.0.1:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=success";
+			$coData['InvokeAddress'] = createReturnURL("success");
             //$coData['InvokeAddress'] = $order->get_checkout_order_received_url();
             $coData['Language'] = $this->language;
             $coData['ReceiverName'] = $order_lastname;
@@ -615,7 +601,6 @@ function payment_return_route( WP_REST_Request $request ) {
 	$order_id = $request["OrderNumber"];
 	$order = new WC_Order($order_id);
 	if(!$signature_match) {
-		// request cannot be trusted, do not change order status
 		$redirect_url = $order->get_cancel_order_url_raw();
 		wp_redirect($redirect_url);
 		exit;
@@ -644,7 +629,6 @@ function payment_return_route( WP_REST_Request $request ) {
 
 function createReturnURL($status) {
 	$url = get_site_url() . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=" . $status;
-	//$url = str_replace('localhost', '127.0.0.1', $url); //hack for local development
 	return $url;
 }
 ?>
