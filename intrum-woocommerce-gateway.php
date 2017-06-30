@@ -319,9 +319,7 @@ function init_WC_Intrum_Gateway() {
 
 			$co_data['SecretCode'] = $this->password;
 			$co_query = $this->generate_checkout_query($co_data);
-			$response = $this->getCheckoutXML($co_query);
-
-			$xml = simplexml_load_string($response);
+			$this->checkout($co_query);
     	}
 
        function process_payment($order_id) {
@@ -338,11 +336,14 @@ function init_WC_Intrum_Gateway() {
 			$this->generate_payment_page($order);
 		}
 
-        function getCheckoutXML($d) {
+        function checkout($query) {
 			$this->device = "10";
-			return $this->sendPost($d);
+			return $this->redirect_to_intrum($query);
         }
 
+		/**
+		 * Generate query that is used for the checkout process
+		 */
         function generate_checkout_query($data) {
 			$query = "MerchantId={$data['MerchantId']}" .
 			"&OrderNumber={$data['OrderNumber']}" .
@@ -375,31 +376,17 @@ function init_WC_Intrum_Gateway() {
 			return $query;
         }
 
-       function sendPost($post) {
-			header ("Location: ".$this->serveraddress . $post);
+		/**
+		 * Forward the user to Intrum's site
+		 */
+       function redirect_to_intrum($query) {
+			header ("Location: ".$this->serveraddress . $query);
         }
 
-        /*function validateCheckout($data) {
-            global $woocommerce;
-
-            $sig = "";
-			$sig .= $data['MerchantId']."&";
-			$sig .= $data['OrderNumber']."&";
-			$sig .= $data['ReturnAddress']."&";
-			$sig .= $data['CancelAddress']."&";
-			$sig .= $data['ErrorAddress']."&";
-			$sig .= $data['InvoiceRowCount']."&";
-			$sig .= $this->get_product_detail_values($data)."&";
-			$sig .= $data['SecretCode'];
-			$signature = hash('sha512',str_replace(' ', '', $sig));
-
-            return $data['MAC'] === $signature;
-        }*/
-
-        function isPaid($status) {
-			return($status == 0);
-        }
-
+		/**
+		 * Generate signature for the checkout query which is validated
+		 * by Intrum.
+		 */
 		private function generate_checkout_signature($data) {
 			$sig = "{$data['MerchantId']}&" .
 			"{$data['OrderNumber']}&" .
@@ -420,6 +407,10 @@ function init_WC_Intrum_Gateway() {
 			return hash($algorithm, str_replace(' ', '', $sig));
 		}
 
+		/**
+		 * Generate part of signature string that contains the values of each
+		 * product in the cart.
+		 */
 		private function get_product_detail_values($data) {
 			$details = "";
 			for ($i = 0; $i < $data['InvoiceRowCount']; $i++) {
@@ -432,6 +423,10 @@ function init_WC_Intrum_Gateway() {
 			return rtrim($details, "&");
 		}
 
+		/**
+		 * Generate part of checkout query that describes the details of each
+		 * product in the cart.
+		 */
 		private function get_product_details($data) {
 			$details = "";
 			for ($i = 0; $i < $data['InvoiceRowCount']; $i++) {
@@ -446,11 +441,16 @@ function init_WC_Intrum_Gateway() {
 			return rtrim($details, "&");
 		}
 
-		// Wrapper for built-in 'urlencode', so it can be neatly called within HEREDOC strings
+		/** 
+		 * Wrapper for built-in 'urlencode', so it can be neatly called within HEREDOC strings
+		 */
 		private function urlencode($str) {
 			return urlencode($str);
 		}
 
+		/**
+		 * Receive an instance of WC_Intrum_Gateway
+		 */
 		public static function get_instance() {
 			if (self::$instance == null) {
 				self::$instance = new self;
@@ -488,7 +488,7 @@ function add_company_id_field( $fields ) {
 	$fields["billing"] = $ordered_fields;	 return $fields;
 }
 
-function add_person__and_company_id_fields( $fields ) {
+function add_person_and_company_id_fields( $fields ) {
 	 $fields['billing']['billing_person_ID'] = array(
 		 'label' => __('Person ID', 'intrum_wc_gateway'),
 		 'placeholder' => __('120380-123C', 'intrum_wc_gateway'),
@@ -559,7 +559,10 @@ function override_processing($string) {
 	return 'completed';
 }
 
-// Helper function for debugging
+/**
+ * Print to error log. 
+ * Helper function for debugging
+ */
 function write_log ( $log )  {
       if ( is_array( $log ) || is_object( $log ) ) {
          error_log( print_r( $log, true ) );
@@ -568,6 +571,9 @@ function write_log ( $log )  {
       }
 }
 
+/**
+ * Check signature of request coming from Intrum.
+ */
 function check_signature_after_payment( WP_REST_Request $request ) {
 	//check signature here
 	$secret = WC_Intrum_Gateway::get_instance()->get_option('password');
@@ -596,13 +602,10 @@ function check_signature_after_payment( WP_REST_Request $request ) {
 	return $request['Signature'] === $signature;
 }
 
-function test_signature_check() {
-}
-
-/*
-* Checks signature and if success, changes order status
-* according https://docs.woocommerce.com/document/managing-orders/
-*/
+/**
+ * Checks signature and if success, changes order status
+ * according https://docs.woocommerce.com/document/managing-orders/
+ */
 function payment_return_route( WP_REST_Request $request ) {
 	$signature_match = check_signature_after_payment($request);
 	$order_id = $request["OrderNumber"];
@@ -639,7 +642,10 @@ function create_return_url($status) {
 	return $url;
 }
 
-// Remove hyphens so 'hash' function recognizes it. Example SHA-512 -> SHA512
+/**
+ * Remove hyphens so 'hash' function recognizes it.
+ * Example SHA-512 -> SHA512
+ */
 function parse_signature_algorithm($str) {
 	return str_replace('-', '', $str);
 }
