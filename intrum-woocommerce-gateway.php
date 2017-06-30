@@ -69,7 +69,6 @@ function init_WC_Intrum_Gateway() {
 		private $ooenabled = true;
 		private $pienabled = false;
 		private $debugmode = true;
-		private $override_processing = false;
 		// Debug server
 		private $serveraddress = " https://maksu.intrum.com/Invoice_Test/Company?";
 
@@ -96,7 +95,6 @@ function init_WC_Intrum_Gateway() {
 			$this->password = str_replace(' ', '', $this->password);
  			if(strtolower($this->get_option('ooenabled'))=="no")$this->ooenabled = false;
  			if(strtolower($this->get_option('pienabled'))=="yes")$this->pienabled = true;
- 			if(strtolower($this->get_option('override_processing'))=="yes")$this->override_processing = true;
  			if(strtolower($this->get_option('debug'))=="no")$this->serveraddress = "https://maksu.intrum.com/Invoice/Company?";
 			$this->tax = 44;//default 24% VAT (calculation happens later, if you are checking my code...)
 
@@ -127,8 +125,6 @@ function init_WC_Intrum_Gateway() {
             add_action('woocommerce_receipt_wc_intrum_gateway', array($this, 'receipt_page'));
 
 			add_action('wp_enqueue_scripts', array($this, 'intrum_checkout_css'));
-			
-			if($this->override_processing) add_filter('woocommerce_payment_complete_order_status', 'override_processing');
         }
 		public function get_icon() {
 				$icon_html = "<img style='margin:0;width:150px;height:auto;' src='".plugins_url( 'yrityslasku_logopainike.png' , __FILE__ ). "' /><a style='float:right;font-size:.83em;' href='https://www.intrum.com/fi/fi/palvelut-yrityksille/verkkokauppa--ja-myymalaratkaisut/yrityslasku/'>".__('What is Yrityslasku?', 'intrum_wc_gateway'). "</a>";
@@ -162,13 +158,6 @@ function init_WC_Intrum_Gateway() {
                     'label' => __('Use test mode only', 'intrum_wc_gateway'),
 					'desc_tip' => __('Use Person ID: 010120-0120 and select Intrum Justitia for identification.', 'intrum_wc_gateway'),
                     'default' => 'yes'
-                ),
-				'override_processing' => array(
-                    'title' => __('Override "processing" status', 'intrum_wc_gateway'),
-                    'type' => 'checkbox',
-                    'label' => __('Set paid orders directly to "completed" status', 'intrum_wc_gateway'),
-					'desc_tip' => __('If enabled, paid orders are direclty set to "completed" instead of "processing", regardless of whether or not the product is digital', 'intrum_wc_gateway'),
-                    'default' => 'no'
                 ),
 	            'ooenabled' => array(
                     'title' => __('Enable purchase restrictions checking', 'intrum_wc_gateway'),
@@ -552,11 +541,6 @@ function intrum_checkout_person_id_process() {
 	load_plugin_textdomain('intrum_wc_gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages');
 
 	if ( isset($_POST['billing_person_ID']) && !$_POST['billing_person_ID'] && ($_POST['payment_method'] == 'wc_intrum_gateway'))wc_add_notice( __( 'Please enter value for Person ID.','intrum_wc_gateway' ), 'error' );
-}
-
-// Ignore status determined by WooCommerce and always set status to 'completed'
-function override_processing($string) {
-	return 'completed';
 }
 
 /**
