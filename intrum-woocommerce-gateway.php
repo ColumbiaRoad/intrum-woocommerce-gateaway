@@ -243,15 +243,14 @@ function init_WC_Intrum_Gateway() {
 
             $co_data = array();
             $coProdHash = "";
-<<<<<<< HEAD
             $co_data['MerchantId'] = $this->merchant;
             $co_data['CompanyId'] = $order_companyID;
             $co_data['PersonId'] = $order_personID;
             $co_data['OrderNumber'] = $order_id;
-            $co_data['ReturnAddress'] = $order->get_checkout_order_received_url();
-            $co_data['CancelAddress'] = $order->get_cancel_order_url_raw();
-            $co_data['ErrorAddress'] = $order->get_cancel_order_url_raw();
-            $co_data['InvokeAddress'] = $order->get_checkout_order_received_url();
+			$co_data['ReturnAddress'] = createReturnURL("success");
+			$co_data['CancelAddress'] = createReturnURL("cancel");
+			$co_data['ErrorAddress'] = createReturnURL("cancel");
+			$co_data['InvokeAddress'] = createReturnURL("success");
             $co_data['Language'] = $this->language;
             $co_data['ReceiverName'] = $order_lastname;
             $co_data['ReceiverFirstName'] = $order_firstname;
@@ -264,32 +263,6 @@ function init_WC_Intrum_Gateway() {
 			$co_data['SignatureMethod'] = 'SHA-512';
 			$co_data['InstallmentCount'] = 1;
 			$co_data['ProductList'] = array();
-=======
-            $coData['MerchantId'] = $this->merchant;
-            $coData['CompanyId'] = $order_companyID;
-            $coData['PersonId'] = $order_personID;
-            $coData['OrderNumber'] = $order_id;
-			$coData['ReturnAddress'] = createReturnURL("success");
-            //$coData['ReturnAddress'] = "http://127.0.0.1:4444/wp-json/intrum-woocommerce-gateway/v1/payment?status=success";
-			//$coData['ReturnAddress'] = $order->get_checkout_order_received_url();
-			$coData['CancelAddress'] = createReturnURL("cancel");
-            //$coData['CancelAddress'] = $order->get_cancel_order_url_raw();
-			$coData['ErrorAddress'] = createReturnURL("cancel");
-            //$coData['ErrorAddress'] = $order->get_cancel_order_url_raw();
-			$coData['InvokeAddress'] = createReturnURL("success");
-            //$coData['InvokeAddress'] = $order->get_checkout_order_received_url();
-            $coData['Language'] = $this->language;
-            $coData['ReceiverName'] = $order_lastname;
-            $coData['ReceiverFirstName'] = $order_firstname;
-            $coData['ReceiverExtraAddressRow'] = $order_adress2;
-            $coData['ReceiverStreetAddress'] = $order_adress;
-            $coData['ReceiverCity'] = $order_city;
-            $coData['ReceiverZipCode'] = $order_postcode;
-            $coData['ReceiverCountryCode'] = $order_countrycode;
-            $coData['InvoiceRowCount'] = count($woocommerce->cart->cart_contents);
-			$coData['SignatureMethod'] = 'SHA-512';
-			$coData['InstallmentCount'] = 1;
->>>>>>> one step more
 
 			$i=1;
 			foreach($woocommerce->cart->cart_contents as $item){
@@ -404,7 +377,7 @@ function init_WC_Intrum_Gateway() {
 			header ("Location: ".$this->serveraddress . $post);
         }
 
-        function validateCheckout($data) {
+        /*function validateCheckout($data) {
             global $woocommerce;
 
             $sig = "";
@@ -419,7 +392,7 @@ function init_WC_Intrum_Gateway() {
 			$signature = hash('sha512',str_replace(' ', '', $sig));
 
             return $data['MAC'] === $signature;
-        }
+        }*/
 
         function isPaid($status) {
 			return($status == 0);
