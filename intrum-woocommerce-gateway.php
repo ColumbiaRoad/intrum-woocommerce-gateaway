@@ -35,6 +35,8 @@ function init_WC_Intrum_Gateway() {
 
     class WC_Intrum_Gateway extends WC_Payment_Gateway {
 
+		private static $instance = null;
+
         private $version = "1.3";
 		private $language = "FI";
 		private $country = "FIN";
@@ -247,10 +249,10 @@ function init_WC_Intrum_Gateway() {
             $co_data['CompanyId'] = $order_companyID;
             $co_data['PersonId'] = $order_personID;
             $co_data['OrderNumber'] = $order_id;
-			$co_data['ReturnAddress'] = createReturnURL("success");
-			$co_data['CancelAddress'] = createReturnURL("cancel");
-			$co_data['ErrorAddress'] = createReturnURL("cancel");
-			$co_data['InvokeAddress'] = createReturnURL("success");
+			$co_data['ReturnAddress'] = create_return_url("success");
+			$co_data['CancelAddress'] = create_return_url("cancel");
+			$co_data['ErrorAddress'] = create_return_url("cancel");
+			$co_data['InvokeAddress'] = create_return_url("success");
             $co_data['Language'] = $this->language;
             $co_data['ReceiverName'] = $order_lastname;
             $co_data['ReceiverFirstName'] = $order_firstname;
@@ -399,22 +401,21 @@ function init_WC_Intrum_Gateway() {
         }
 
 		private function generate_checkout_signature($data) {
-			$sig = "";
-			$sig .= "{$data['MerchantId']}&";
-			$sig .= "{$data['OrderNumber']}&";
-			$sig .= "{$data['ReturnAddress']}&";
-			$sig .= "{$data['CancelAddress']}&";
-			$sig .= "{$data['ErrorAddress']}&";
+			$sig = "{$data['MerchantId']}&" .
+			"{$data['OrderNumber']}&" .
+			"{$data['ReturnAddress']}&" .
+			"{$data['CancelAddress']}&" .
+			"{$data['ErrorAddress']}&";
 			// Optional values
 			if(!empty($data['InvokeAddress'])) $sig .= "{$data['InvokeAddress']}&";
 			if(!empty($data['Language'])) $sig .= "{$data['Language']}&";
 
-			$sig .= "{$data['InvoiceRowCount']}&";
-			$sig .= "{$data['SignatureMethod']}&";
-			$sig .= "{$this->get_product_detail_values($data)}&";
-			$sig .= $data['SecretCode'];
-			// Remove hyphens so 'hash' function recognizes it. Example SHA-512 -> SHA512
-			$algorithm = str_replace('-', '', $data['SignatureMethod']);
+			$sig .= "{$data['InvoiceRowCount']}&" .
+			"{$data['SignatureMethod']}&" .
+			"{$this->get_product_detail_values($data)}&" .
+			$data['SecretCode'];
+			
+			$algorithm = parse_signature_algorithm($data['SignatureMethod']);
 
 			return hash($algorithm, str_replace(' ', '', $sig));
 		}
@@ -448,6 +449,13 @@ function init_WC_Intrum_Gateway() {
 		// Wrapper for built-in 'urlencode', so it can be neatly called within HEREDOC strings
 		private function urlencode($str) {
 			return urlencode($str);
+		}
+
+		public static function get_instance() {
+			if (self::$instance == null) {
+				self::$instance = new self;
+			}
+			return self::$instance;
 		}
     }
 
@@ -562,7 +570,33 @@ function write_log ( $log )  {
 
 function check_signature_after_payment( WP_REST_Request $request ) {
 	//check signature here
-	return true;
+	$secret = WC_Intrum_Gateway::get_instance()->get_option('password');
+	$algorithm = parse_signature_algorithm($request['SignatureMethod']);
+
+	$sig_str = "{$request['OrderNumber']}&" .
+	"{$request['InvoiceReference']}&" .
+	"{$request['InstallmentCount']}&" .
+	"{$request['PayerName']}&";
+	if(!empty($request['PayerExtraAddressRow'])) $sig_str .= "{$request['PayerExtraAddressRow']}&";
+	$sig_str .="{$request['PayerStreetAddress']}&" .
+	"{$request['PayerCity']}&" .
+	"{$request['PayerZipCode']}&";
+	if(!empty($request['PayerCountryCode'])) $sig_str .= "{$request['PayerCountryCode']}&";
+	$sig_str .= "{$request['Version']}&" .
+	"{$request['ErrorCode']}&" .
+	"{$request['ErrorMessage']}&" .
+	"{$request['SignatureMethod']}&";
+	for ($i = 1; $i <= $request['InstallmentCount']; $i++) {
+		$sig_str .= "{$request["InstallmentDueDate$i"]}&" .
+		"{$request["InstallmentAmount$i"]}&";
+	}
+	$sig_str .= $secret;
+	
+	$signature = hash($algorithm, str_replace(' ', '', $sig_str));
+	return $request['Signature'] === $signature;
+}
+
+function test_signature_check() {
 }
 
 /*
@@ -600,8 +634,13 @@ function payment_return_route( WP_REST_Request $request ) {
 	exit;
 }
 
-function createReturnURL($status) {
+function create_return_url($status) {
 	$url = get_site_url() . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=" . $status;
 	return $url;
+}
+
+// Remove hyphens so 'hash' function recognizes it. Example SHA-512 -> SHA512
+function parse_signature_algorithm($str) {
+	return str_replace('-', '', $str);
 }
 ?>
