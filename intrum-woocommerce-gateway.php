@@ -203,7 +203,7 @@ function init_WC_Intrum_Gateway() {
 				),
                 'password' => array(
                     'title' => __('Password', 'intrum_wc_gateway'),
-                    'type' => 'text',
+                    'type' => 'password',
                     'description' => __('Add your password', 'intrum_wc_gateway'),
                     'default' => ''
                 ),
