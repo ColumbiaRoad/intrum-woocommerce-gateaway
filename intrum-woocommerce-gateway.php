@@ -350,32 +350,32 @@ function init_WC_Intrum_Gateway() {
         }
 
         function generate_checkout_query($data) {
-			$query = "MerchantId={$data['MerchantId']}";
+			$query = "MerchantId={$data['MerchantId']}" .
+			"&OrderNumber={$data['OrderNumber']}" .
+			"&ReturnAddress={$this->urlencode($data['ReturnAddress'])}" .
+			"&CancelAddress={$this->urlencode($data['CancelAddress'])}" .
+			"&ErrorAddress={$this->urlencode($data['ErrorAddress'])}" .
+			"&InvokeAddress={$this->urlencode($data['InvokeAddress'])}" .
+			"&Language={$data['Language']}" .
+			"&InvoiceName={$data['ReceiverName']}" .
+			"&InvoiceFirstName={$data['ReceiverFirstName']}" .
+			"&InvoiceStreetAddress={$data['ReceiverStreetAddress']}" .
+			"&InvoiceExtraAddressRow={$data['ReceiverExtraAddressRow']}" .
+			"&InvoiceCity={$data['ReceiverCity']}" .
+			"&InvoiceZipCode={$data['ReceiverZipCode']}";
+			"&InvoiceCountryCode={$data['ReceiverCountryCode']}";
 			if(!$this->ooenabled && !$this->pienabled) {
 				$query .= "&CompanyId={$data['CompanyId']}";
 			}
 			if($this->pienabled) {
-				$query .= "&CompanyId={$data['CompanyId']}";
-				$query .= "&PersonId={$data['PersonId']}";
-				$query .= "&SkipTupasAuthentication=true";
+				$query .= "&SkipTupasAuthentication=true" .
+				"&PersonId={$data['PersonId']}" .
+				"&CompanyId={$data['CompanyId']}";
 			}
-			// $query .= "&Language={$data['Language']}" .
-			$query .= "&InvoiceName={$data['ReceiverName']}" .
-			"&InvoiceFirstName={$data['ReceiverFirstName']}" .
-			"&InvoiceStreetAddress={$data['ReceiverStreetAddress']}" .
-			// "&InvoiceExtraAddressRow={$data['ReceiverExtraAddressRow']}" .
-			"&InvoiceCity={$data['ReceiverCity']}" .
-			"&InvoiceZipCode={$data['ReceiverZipCode']}" .
-			// "&InvoiceCountryCode={$data['ReceiverCountryCode']}" .
-			"&OrderNumber={$data['OrderNumber']}" .
-			"&InvoiceRowCount={$data['InvoiceRowCount']}" .
-			"&ReturnAddress={$this->urlencode($data['ReturnAddress'])}" .
-			"&CancelAddress={$this->urlencode($data['CancelAddress'])}" .
-			"&ErrorAddress={$this->urlencode($data['ErrorAddress'])}" .
-			// "&InvokeAddress={$this->urlencode($data['InvokeAddress'])}" .
-			"&{$this->get_product_details($data)}" .
-			// "&SignatureMethod={$data['SignatureMethod']}" .
-			"&Signature={$this->generate_signature($data)}";
+			$query .= "&InvoiceRowCount={$data['InvoiceRowCount']}" .
+			"&SignatureMethod={$data['SignatureMethod']}" .
+			"&Signature={$this->generate_checkout_signature($data)}" .
+			"&{$this->get_product_details($data)}";
 			$file = plugin_dir_path( __FILE__ ). 'last_query.log';
 			file_put_contents($file, $query);
 			return $query;
@@ -406,7 +406,7 @@ function init_WC_Intrum_Gateway() {
 			return($status == 0);
         }
 
-		private function generate_signature($data) {
+		private function generate_checkout_signature($data) {
 			$sig = "";
 			$sig .= "{$data['MerchantId']}&";
 			$sig .= "{$data['OrderNumber']}&";
@@ -414,11 +414,11 @@ function init_WC_Intrum_Gateway() {
 			$sig .= "{$data['CancelAddress']}&";
 			$sig .= "{$data['ErrorAddress']}&";
 			// Optional values
-			// if(!empty($data['InvokeAddress'])) $sig .= "{$data['InvokeAddress']}&";
-			// if(!empty($data['Language'])) $sig .= "{$data['Language']}&";
+			if(!empty($data['InvokeAddress'])) $sig .= "{$data['InvokeAddress']}&";
+			if(!empty($data['Language'])) $sig .= "{$data['Language']}&";
 
 			$sig .= "{$data['InvoiceRowCount']}&";
-			// $sig .= "{$data['SignatureMethod']}&";
+			$sig .= "{$data['SignatureMethod']}&";
 			$sig .= "{$this->get_product_detail_values($data)}&";
 			$sig .= $data['SecretCode'];
 			// Remove hyphens so 'hash' function recognizes it. Example SHA-512 -> SHA512
