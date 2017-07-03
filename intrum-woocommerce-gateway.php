@@ -12,10 +12,10 @@ if (!defined('ABSPATH')) {
 
 add_action( 'plugins_loaded', 'init_WC_Intrum_Gateway' );
 function init_WC_Intrum_Gateway() {
-    if (!class_exists( 'WC_Payment_Gateway')) {
-        return;
-    }
-    load_plugin_textdomain('intrum_wc_gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages');
+	if (!class_exists( 'WC_Payment_Gateway')) {
+		return;
+	}
+	load_plugin_textdomain('intrum_wc_gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages');
 	add_filter('woocommerce_payment_gateways', 'add_intrum_gateway' );
 	add_action('woocommerce_checkout_update_order_meta', 'intrum_checkout_field_update_order_meta' );
  	add_action('woocommerce_checkout_process', 'intrum_checkout_person_id_process');
@@ -25,19 +25,20 @@ function init_WC_Intrum_Gateway() {
 		register_rest_route( 'intrum-woocommerce-gateway/v1', '/payment', array(
 			'methods'  => 'POST',
 			'callback' => 'payment_return_route',
-		) );
+			)
+		);
 	});
 
-    function add_intrum_gateway($methods) {
-            $methods[] = 'WC_Intrum_Gateway';
-            return $methods;
-    }
+	function add_intrum_gateway($methods) {
+		$methods[] = 'WC_Intrum_Gateway';
+		return $methods;
+	}
 
-    class WC_Intrum_Gateway extends WC_Payment_Gateway {
+	class WC_Intrum_Gateway extends WC_Payment_Gateway {
 
 		private static $instance = null;
 
-        private $version = "1.3";
+		private $version = "1.3";
 		private $language = "FI";
 		private $country = "FIN";
 		private $currency = "EUR";
@@ -72,26 +73,26 @@ function init_WC_Intrum_Gateway() {
 		// Debug server
 		private $serveraddress = " https://maksu.intrum.com/Invoice_Test/Company?";
 
-        function __construct() {
+    function __construct() {
 
-            global $woocommerce;
+			global $woocommerce;
 
-            $this->id = 'wc_intrum_gateway';
+			$this->id = 'wc_intrum_gateway';
 
-            $this->init_form_fields();
-            $this->init_settings();
+			$this->init_form_fields();
+			$this->init_settings();
 
-            $this->has_fields = false;
+			$this->has_fields = false;
 
-            $this->method_title = __('Intrum Justitia Yrityslasku', 'intrum_wc_gateway');
-            $this->method_description = __('Pay all at once or in installments', 'intrum_wc_gateway');
+			$this->method_title = __('Intrum Justitia Yrityslasku', 'intrum_wc_gateway');
+			$this->method_description = __('Pay all at once or in installments', 'intrum_wc_gateway');
 
-            $this->title = $this->get_option('title');
-            $this->description = $this->get_option('title'). " - " . $this->get_option('description');
-            $this->notify_url = WC()->api_request_url('WC_Intrum_Gateway');
-            $this->merchant = $this->get_option('merchant');
+			$this->title = $this->get_option('title');
+			$this->description = $this->get_option('title'). " - " . $this->get_option('description');
+			$this->notify_url = WC()->api_request_url('WC_Intrum_Gateway');
+			$this->merchant = $this->get_option('merchant');
 			$this->merchant = str_replace(' ', '', $this->merchant);
-            $this->password = $this->get_option('password');
+			$this->password = $this->get_option('password');
 			$this->password = str_replace(' ', '', $this->password);
  			if(strtolower($this->get_option('ooenabled'))=="no")$this->ooenabled = false;
  			if(strtolower($this->get_option('pienabled'))=="yes")$this->pienabled = true;
@@ -118,100 +119,106 @@ function init_WC_Intrum_Gateway() {
 				add_filter('woocommerce_checkout_fields' , 'add_company_id_field' );
 			}
 			if($this->pienabled){
-				add_filter('woocommerce_checkout_fields' , 'add_person__and_company_id_fields' );
+				add_filter('woocommerce_checkout_fields' , 'add_person_and_company_id_fields' );
 			}
-            add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
+			add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
 
-            add_action('woocommerce_receipt_wc_intrum_gateway', array($this, 'receipt_page'));
+			add_action('woocommerce_receipt_wc_intrum_gateway', array($this, 'receipt_page'));
 
 			add_action('wp_enqueue_scripts', array($this, 'intrum_checkout_css'));
-        }
+    }
+
 		public function get_icon() {
-				$icon_html = "<img style='margin:0;width:150px;height:auto;' src='".plugins_url( 'yrityslasku_logopainike.png' , __FILE__ ). "' /><a style='float:right;font-size:.83em;' href='https://www.intrum.com/fi/fi/palvelut-yrityksille/verkkokauppa--ja-myymalaratkaisut/yrityslasku/'>".__('What is Yrityslasku?', 'intrum_wc_gateway'). "</a>";
-				return apply_filters( 'woocommerce_gateway_icon', $icon_html, $this->id );
-			}
-        function admin_options() {
+			$icon_html = "<img style='margin:0;width:150px;height:auto;' src='".plugins_url( 'yrityslasku_logopainike.png' , __FILE__ ). "' /><a style='float:right;font-size:.83em;' href='https://www.intrum.com/fi/fi/palvelut-yrityksille/verkkokauppa--ja-myymalaratkaisut/yrityslasku/'>".__('What is Yrityslasku?', 'intrum_wc_gateway'). "</a>";
+			return apply_filters( 'woocommerce_gateway_icon', $icon_html, $this->id );
+		}
+
+    function admin_options() {
 			echo "<h3><img style='margin:0;width:300px;height:auto;' src='".plugins_url( 'yrityslasku_logopainike.png' , __FILE__ ). "' /><br>";
-            echo  __('Intrum Justitia Yrityslasku for Woocommerce', 'intrum_wc_gateway') . '</h3>';
-            echo '<table class="form-table">';
-            $this->generate_settings_html();
-            echo '</table>';
-        }
+      echo  __('Intrum Justitia Yrityslasku for Woocommerce', 'intrum_wc_gateway') . '</h3>';
+      echo '<table class="form-table">';
+      $this->generate_settings_html();
+      echo '</table>';
+    }
 
 		function intrum_checkout_css() {
 			wp_register_style('style-site', plugins_url('/css/style.css', __FILE__));
 			wp_enqueue_style('style-site');
 		}
 
-        function init_form_fields() {
+    function init_form_fields() {
 
 			$this->form_fields = array(
-                'enabled' => array(
-                    'title' => __('Enable/Disable', 'intrum_wc_gateway'),
-                    'type' => 'checkbox',
-                    'label' => __('Enable Intrum Justitia Woocommerce Payment Gateway', 'intrum_wc_gateway'),
-                    'default' => 'yes'
-                ),
+				'enabled' => array(
+					'title' => __('Enable/Disable', 'intrum_wc_gateway'),
+					'type' => 'checkbox',
+					'label' => __('Enable Intrum Justitia Woocommerce Payment Gateway', 'intrum_wc_gateway'),
+					'default' => 'yes'
+				),
 				'debug' => array(
-                    'title' => __('Test mode', 'intrum_wc_gateway'),
-                    'type' => 'checkbox',
-                    'label' => __('Use test mode only', 'intrum_wc_gateway'),
+					'title' => __('Test mode', 'intrum_wc_gateway'),
+					'type' => 'checkbox',
+					'label' => __('Use test mode only', 'intrum_wc_gateway'),
 					'desc_tip' => __('Use Person ID: 010120-0120 and select Intrum Justitia for identification.', 'intrum_wc_gateway'),
                     'default' => 'yes'
-                ),
-	            'ooenabled' => array(
-                    'title' => __('Enable purchase restrictions checking', 'intrum_wc_gateway'),
-                    'type' => 'checkbox',
-                    'desc_tip' => __('Use Company ID (Y-tunnus) for checking purchase restrictions', 'intrum_wc_gateway'),
-                    'default' => 'yes'
-                ),
-		        'pienabled' => array(
-                    'title' => __('Bypass TUPAS -identification', 'intrum_wc_gateway'),
-                    'type' => 'checkbox',
-                    'desc_tip' => __('Use Person ID (henkilötunnus) for checking purchase restrictions', 'intrum_wc_gateway'),
-                    'default' => 'no'
-                ),
+        ),
+	    	'ooenabled' => array(
+					'title' => __('Enable purchase restrictions checking', 'intrum_wc_gateway'),
+					'type' => 'checkbox',
+					'desc_tip' => __('Use Company ID (Y-tunnus) for checking purchase restrictions', 'intrum_wc_gateway'),
+					'default' => 'yes'
+        ),
+		    'pienabled' => array(
+					'title' => __('Bypass TUPAS -identification', 'intrum_wc_gateway'),
+					'type' => 'checkbox',
+					'desc_tip' => __('Use Person ID (henkilötunnus) for checking purchase restrictions', 'intrum_wc_gateway'),
+					'default' => 'no'
+				),
 				'title' => array(
-                    'title' => __('Title', 'intrum_wc_gateway'),
-                    'type' => 'text',
-                    'description' => __('This controls the title which the user sees during checkout.', 'intrum_wc_gateway'),
-                    'desc_tip' => false,
-                    'default' => __('Intrum Justitia Yrityslasku', 'intrum_wc_gateway')
+					'title' => __('Title', 'intrum_wc_gateway'),
+					'type' => 'text',
+					'description' => __('This controls the title which the user sees during checkout.', 'intrum_wc_gateway'),
+					'desc_tip' => false,
+					'default' => __('Intrum Justitia Yrityslasku', 'intrum_wc_gateway')
 				),
-                'description' => array(
-                    'title' => __('Description', 'intrum_wc_gateway'),
-                    'type' => 'textarea',
-                    'description' => __('This controls the description which the user sees during checkout.', 'intrum_wc_gateway'),
-                    'default' => __('Pay in installments or all at once', 'intrum_wc_gateway')
+				'description' => array(
+					'title' => __('Description', 'intrum_wc_gateway'),
+					'type' => 'textarea',
+					'description' => __('This controls the description which the user sees during checkout.', 'intrum_wc_gateway'),
+					'default' => __('Pay in installments or all at once', 'intrum_wc_gateway')
 				),
-                'merchant' => array(
-                    'title' => __('Merchant Id', 'intrum_wc_gateway'),
-                    'type' => 'text',
-                    'description' => __('Add your merchant Id', 'intrum_wc_gateway'),
-                    'default' => ''
+				'merchant' => array(
+					'title' => __('Merchant Id', 'intrum_wc_gateway'),
+					'type' => 'text',
+					'description' => __('Add your merchant Id', 'intrum_wc_gateway'),
+					'default' => ''
 				),
-                'password' => array(
-                    'title' => __('Password', 'intrum_wc_gateway'),
-                    'type' => 'password',
-                    'description' => __('Add your password', 'intrum_wc_gateway'),
-                    'default' => ''
-                ),
+				'password' => array(
+					'title' => __('Password', 'intrum_wc_gateway'),
+					'type' => 'password',
+					'description' => __('Add your password', 'intrum_wc_gateway'),
+					'default' => ''
+				),
 				'language' => array(
-                    'title' => __('Language', 'intrum_wc_gateway'),
-                    'type' => 'select',
-					'options' => array('automatic' => __('Automatic', 'intrum_wc_gateway'), 'FI' => __('Finnish', 'intrum_wc_gateway'), 'SE' => __('Swedish', 'intrum_wc_gateway'), 'EN' => __('English', 'intrum_wc_gateway')),
-                    'description' => __('Payment language (Automatic gets language from Wordpress. If Wordpress language is not Finnish or Swedish, then uses English)', 'intrum_wc_gateway'),
-                    'default' => 'automatic'
-                ),
+					'title' => __('Language', 'intrum_wc_gateway'),
+					'type' => 'select',
+					'options' => array(
+						'automatic' => __('Automatic', 'intrum_wc_gateway'),
+						'FI' => __('Finnish', 'intrum_wc_gateway'),
+						'SE' => __('Swedish', 'intrum_wc_gateway'),
+						'EN' => __('English', 'intrum_wc_gateway')
+					),
+					'description' => __('Payment language (Automatic gets language from Wordpress. If Wordpress language is not Finnish or Swedish, then uses English)', 'intrum_wc_gateway'),
+					'default' => 'automatic'
+				),
+			);
+    }
 
-            );
-        }
+    function generate_payment_page($order_id) {
+			global $woocommerce;
+			$order = new WC_Order($order_id);
 
-        function generate_payment_page($order_id) {
-            global $woocommerce;
-            $order = new WC_Order($order_id);
-
-            $total = $woocommerce->cart->total * 100;
+			$total = $woocommerce->cart->total * 100;
 
 			// Some WC plugins make cart->total to be zero or undefined, in those cases, we use order_total
 			if (!$total || $total <= 0) {
@@ -219,38 +226,38 @@ function init_WC_Intrum_Gateway() {
 			}
 
 			$password = $this->password;
-            $order_data = get_post_meta($order_id);
-            $order_firstname = $order_data["_billing_first_name"][0];
-            $order_lastname = $order_data["_billing_last_name"][0];
-            $order_companyID = $order_data["_billing_company_ID"][0];
-            $order_personID = $order_data["_billing_person_ID"][0];
-            $order_adress = $order_data["_billing_address_1"][0];
-            $order_adress2 = $order_data["_billing_address_2"][0];
-            $order_postcode = $order_data["_billing_postcode"][0];
-            $order_city = $order_data["_billing_city"][0];
-            $order_countrycode = $order_data["_billing_country"][0];
-            $order_email = $order_data["_billing_email"][0];
-            $order_phone = $order_data["_billing_phone"][0];
+			$order_data = get_post_meta($order_id);
+			$order_firstname = $order_data["_billing_first_name"][0];
+			$order_lastname = $order_data["_billing_last_name"][0];
+			$order_companyID = $order_data["_billing_company_ID"][0];
+			$order_personID = $order_data["_billing_person_ID"][0];
+			$order_adress = $order_data["_billing_address_1"][0];
+			$order_adress2 = $order_data["_billing_address_2"][0];
+			$order_postcode = $order_data["_billing_postcode"][0];
+			$order_city = $order_data["_billing_city"][0];
+			$order_countrycode = $order_data["_billing_country"][0];
+			$order_email = $order_data["_billing_email"][0];
+			$order_phone = $order_data["_billing_phone"][0];
 
-            $co_data = array();
-            $coProdHash = "";
-            $co_data['MerchantId'] = $this->merchant;
-            $co_data['CompanyId'] = $order_companyID;
-            $co_data['PersonId'] = $order_personID;
-            $co_data['OrderNumber'] = $order_id;
+			$co_data = array();
+			$coProdHash = "";
+			$co_data['MerchantId'] = $this->merchant;
+			$co_data['CompanyId'] = $order_companyID;
+			$co_data['PersonId'] = $order_personID;
+			$co_data['OrderNumber'] = $order_id;
 			$co_data['ReturnAddress'] = create_return_url("success");
 			$co_data['CancelAddress'] = create_return_url("cancel");
 			$co_data['ErrorAddress'] = create_return_url("cancel");
 			$co_data['InvokeAddress'] = create_return_url("success");
-            $co_data['Language'] = $this->language;
-            $co_data['ReceiverName'] = $order_lastname;
-            $co_data['ReceiverFirstName'] = $order_firstname;
-            $co_data['ReceiverExtraAddressRow'] = $order_adress2;
-            $co_data['ReceiverStreetAddress'] = $order_adress;
-            $co_data['ReceiverCity'] = $order_city;
-            $co_data['ReceiverZipCode'] = $order_postcode;
-            $co_data['ReceiverCountryCode'] = $order_countrycode;
-            $co_data['InvoiceRowCount'] = count($woocommerce->cart->cart_contents);
+			$co_data['Language'] = $this->language;
+			$co_data['ReceiverName'] = $order_lastname;
+			$co_data['ReceiverFirstName'] = $order_firstname;
+			$co_data['ReceiverExtraAddressRow'] = $order_adress2;
+			$co_data['ReceiverStreetAddress'] = $order_adress;
+			$co_data['ReceiverCity'] = $order_city;
+			$co_data['ReceiverZipCode'] = $order_postcode;
+			$co_data['ReceiverCountryCode'] = $order_countrycode;
+			$co_data['InvoiceRowCount'] = count($woocommerce->cart->cart_contents);
 			$co_data['SignatureMethod'] = 'SHA-512';
 			$co_data['InstallmentCount'] = 1;
 			$co_data['ProductList'] = array();
@@ -309,11 +316,11 @@ function init_WC_Intrum_Gateway() {
 			$co_data['SecretCode'] = $this->password;
 			$co_query = $this->generate_checkout_query($co_data);
 			$this->checkout($co_query);
-    	}
+    }
 
-       function process_payment($order_id) {
-            global $woocommerce;
-            $order = new WC_Order($order_id);
+    function process_payment($order_id) {
+			global $woocommerce;
+			$order = new WC_Order($order_id);
 			$order->update_status('pending', __( 'Yrityslasku is pending', 'intrum_wc_gateway' ));
             return array(
                 'result' => 'success',
@@ -321,19 +328,19 @@ function init_WC_Intrum_Gateway() {
             );
         }
 
-        function receipt_page($order) {
+    function receipt_page($order) {
 			$this->generate_payment_page($order);
 		}
 
-        function checkout($query) {
+    function checkout($query) {
 			$this->device = "10";
 			return $this->redirect_to_intrum($query);
-        }
+    }
 
 		/**
 		 * Generate query that is used for the checkout process
 		 */
-        function generate_checkout_query($data) {
+    function generate_checkout_query($data) {
 			$query = "MerchantId={$data['MerchantId']}" .
 			"&OrderNumber={$data['OrderNumber']}" .
 			"&ReturnAddress={$this->urlencode($data['ReturnAddress'])}" .
@@ -363,14 +370,14 @@ function init_WC_Intrum_Gateway() {
 			$file = plugin_dir_path( __FILE__ ). 'last_query.log';
 			file_put_contents($file, $query);
 			return $query;
-        }
+    }
 
 		/**
 		 * Forward the user to Intrum's site
 		 */
-       function redirect_to_intrum($query) {
+    function redirect_to_intrum($query) {
 			header ("Location: ".$this->serveraddress . $query);
-        }
+    }
 
 		/**
 		 * Generate signature for the checkout query which is validated
@@ -446,35 +453,34 @@ function init_WC_Intrum_Gateway() {
 			}
 			return self::$instance;
 		}
-    }
+  }
 
 }
 
 function add_company_id_field( $fields ) {
-	if(WC()->session->chosen_payment_method=='wc_intrum_gateway')
-
-	 $fields['billing']['billing_company_ID']['placeholder'] = __('1234567-8', 'intrum_wc_gateway');
-	 $fields['billing']['billing_company_ID']['label'] = __('Company ID', 'intrum_wc_gateway');
-	 $fields['billing']['billing_company_ID']['required'] = true;
-	 $ordered = array(
-		"billing_first_name",
-		"billing_last_name",
-		"billing_company",
-		"billing_company_ID",
-		"billing_address_1",
-		"billing_address_2",
-		"billing_postcode",
-		"billing_city",
-		"billing_country",
-		"billing_email",
-		"billing_phone"
-
-	);
-	foreach($ordered as $field){
-		$ordered_fields[$field] = $fields["billing"][$field];
+	if(WC()->session->chosen_payment_method=='wc_intrum_gateway') {
+		$fields['billing']['billing_company_ID']['placeholder'] = __('1234567-8', 'intrum_wc_gateway');
+		$fields['billing']['billing_company_ID']['label'] = __('Company ID', 'intrum_wc_gateway');
+		$fields['billing']['billing_company_ID']['required'] = true;
+		$ordered = array(
+			"billing_first_name",
+			"billing_last_name",
+			"billing_company",
+			"billing_company_ID",
+			"billing_address_1",
+			"billing_address_2",
+			"billing_postcode",
+			"billing_city",
+			"billing_country",
+			"billing_email",
+			"billing_phone"
+		);
+		foreach($ordered as $field){
+			$ordered_fields[$field] = $fields["billing"][$field];
+		}
+		$fields["billing"] = $ordered_fields;		
 	}
-
-	$fields["billing"] = $ordered_fields;	 return $fields;
+	return $fields;
 }
 
 function add_person_and_company_id_fields( $fields ) {
@@ -522,25 +528,31 @@ function add_intrum_js(){
 	wp_enqueue_script('intrum_wc_gateway_js');
 
 }
+
 function intrum_checkout_field_update_order_meta( $order_id ) {
-	if(WC()->session->chosen_payment_method=='wc_intrum_gateway')
-    if(!empty( $_POST['billing_company_ID']))update_post_meta( $order_id, '_billing_company_ID', sanitize_text_field( $_POST['billing_company_ID'] ) );
-    if(!empty( $_POST['billing_person_ID']))update_post_meta( $order_id, '_billing_person_ID', sanitize_text_field( $_POST['billing_person_ID'] ) );
+	if(WC()->session->chosen_payment_method=='wc_intrum_gateway') {
+    if(!empty( $_POST['billing_company_ID'])) update_post_meta( $order_id, '_billing_company_ID', sanitize_text_field( $_POST['billing_company_ID'] ) );
+    if(!empty( $_POST['billing_person_ID'])) update_post_meta( $order_id, '_billing_person_ID', sanitize_text_field( $_POST['billing_person_ID'] ) );
+	}
 }
 
 function intrum_checkout_company_id_process() {
-	if(WC()->session->chosen_payment_method=='wc_intrum_gateway')
+	if(WC()->session->chosen_payment_method=='wc_intrum_gateway') {
+		load_plugin_textdomain('intrum_wc_gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages');
+	}
 
-	load_plugin_textdomain('intrum_wc_gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages');
-	if ( isset($_POST['billing_company_ID']) && !$_POST['billing_company_ID'] && ($_POST['payment_method'] == 'wc_intrum_gateway'))wc_add_notice( __( 'Please enter value for Company ID.', 'intrum_wc_gateway' ), 'error' );
+	if ( isset($_POST['billing_company_ID']) && !$_POST['billing_company_ID'] && ($_POST['payment_method'] == 'wc_intrum_gateway')) {
+		wc_add_notice( __( 'Please enter value for Company ID.', 'intrum_wc_gateway' ), 'error' );
+	}
 }
 
 function intrum_checkout_person_id_process() {
-	if(WC()->session->chosen_payment_method=='wc_intrum_gateway')
-
-	load_plugin_textdomain('intrum_wc_gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages');
-
-	if ( isset($_POST['billing_person_ID']) && !$_POST['billing_person_ID'] && ($_POST['payment_method'] == 'wc_intrum_gateway'))wc_add_notice( __( 'Please enter value for Person ID.','intrum_wc_gateway' ), 'error' );
+	if(WC()->session->chosen_payment_method=='wc_intrum_gateway') {
+		load_plugin_textdomain('intrum_wc_gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages');
+	}
+	if ( isset($_POST['billing_person_ID']) && !$_POST['billing_person_ID'] && ($_POST['payment_method'] == 'wc_intrum_gateway')) {
+		wc_add_notice( __( 'Please enter value for Person ID.','intrum_wc_gateway' ), 'error' );
+	}
 }
 
 /**
