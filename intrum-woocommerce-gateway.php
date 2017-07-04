@@ -256,7 +256,7 @@ function init_WC_Intrum_Gateway() {
 			$co_data['MerchantId'] = $this->merchant;
 			$co_data['CompanyId'] = $order_companyID;
 			$co_data['PersonId'] = $order_personID;
-			$co_data['OrderNumber'] = $order_id + 1000;
+			$co_data['OrderNumber'] = $order_id;
 			$co_data['ReturnAddress'] = create_return_url("success", $order_id);
 			$co_data['CancelAddress'] = create_return_url("cancel", $order_id);
 			$co_data['ErrorAddress'] = create_return_url("error", $order_id);
@@ -280,8 +280,14 @@ function init_WC_Intrum_Gateway() {
 					$item_tax = round($order->get_line_tax( $item, false ),2);
 					$item_vat_perc = round($item_tax * 100 / $item_net);
 					$item_total = $order->get_item_total( $item, true );
-					$item_name = $item['name'];
-					$item_quantity = $item['item_meta']['_qty'][0];
+					// Check for WooCommerce version
+					if(version_check()) {
+						$item_name = $item->get_name();
+						$item_quantity = $item->get_quantity();
+					} else {
+						$item_name = $item['name'];
+						$item_quantity = $item['item_meta']['_qty'][0];
+					}
 					//Convert tax percentage to Intrum's tax class id, eg one of (1,2,3,9,44,45,46)
 					switch ($item_vat_perc) {
 						case 10:
@@ -612,7 +618,7 @@ function payment_return_route( WP_REST_Request $request ) {
 
 	write_log($request);
 	if(!empty($request["OrderNumber"])) {
-		$order_id = $request["OrderNumber"] - 1000;
+		$order_id = $request["OrderNumber"];
 	} else {
 		// Fallback, we have no way to validate this value
 		$order_id = $request->get_param("order-id");
@@ -665,5 +671,19 @@ function create_return_url($status, $order_id) {
  */
 function parse_signature_algorithm($str) {
 	return str_replace('-', '', $str);
+}
+
+/**
+ * Helper function to check WooCommerce version.
+ * Default version for comparisoin is '3.0'.
+ */
+function version_check( $version = '3.0' ) {
+	if ( class_exists( 'WooCommerce' ) ) {
+		global $woocommerce;
+		if ( version_compare( $woocommerce->version, $version, ">=" ) ) {
+			return true;
+		}
+	}
+	return false;
 }
 ?>
