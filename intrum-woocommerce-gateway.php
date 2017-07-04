@@ -616,11 +616,10 @@ function check_signature_after_payment( WP_REST_Request $request ) {
 function payment_return_route( WP_REST_Request $request ) {
 	$valid_request = check_signature_after_payment($request);
 
-	write_log($request);
 	if(!empty($request["OrderNumber"])) {
 		$order_id = $request["OrderNumber"];
 	} else {
-		// Fallback, we have no way to validate this value
+		// Fallback, we have no way to verify this value
 		$order_id = $request->get_param("order-id");
 	}
 
