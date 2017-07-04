@@ -70,6 +70,7 @@ function init_WC_Intrum_Gateway() {
 		private $ooenabled = true;
 		private $pienabled = false;
 		private $debugmode = true;
+		private $tax_included = true;
 		// Debug server
 		private $serveraddress = " https://maksu.intrum.com/Invoice_Test/Company?";
 
@@ -94,6 +95,7 @@ function init_WC_Intrum_Gateway() {
 			$this->merchant = str_replace(' ', '', $this->merchant);
 			$this->password = $this->get_option('password');
 			$this->password = str_replace(' ', '', $this->password);
+			$this->tax_included = $this->get_option('tax_included');
  			if(strtolower($this->get_option('ooenabled'))=="no")$this->ooenabled = false;
  			if(strtolower($this->get_option('pienabled'))=="yes")$this->pienabled = true;
  			if(strtolower($this->get_option('debug'))=="no")$this->serveraddress = "https://maksu.intrum.com/Invoice/Company?";
@@ -211,6 +213,16 @@ function init_WC_Intrum_Gateway() {
 					'description' => __('Payment language (Automatic gets language from Wordpress. If Wordpress language is not Finnish or Swedish, then uses English)', 'intrum_wc_gateway'),
 					'default' => 'automatic'
 				),
+				'tax_included' => array(
+					'title' => __('Are taxes included or excluded in prices?', 'intrum_wc_gateway'),
+					'type' => 'select',
+					'options' => array(
+						true => __('Included', 'intrum_wc_gateway'),
+						false => __('Excluded', 'intrum_wc_gateway'),
+					),
+					'description' => __('Intrum needs this information for bill. ', 'intrum_wc_gateway'),
+					'default' => true
+				),
 			);
     }
 
@@ -262,55 +274,36 @@ function init_WC_Intrum_Gateway() {
 			$co_data['InstallmentCount'] = 1;
 			$co_data['ProductList'] = array();
 
-			$i=1;
-			foreach($woocommerce->cart->cart_contents as $item){
-				$product = $item['data'];
-				$post = $item['data']->post;
-				//tax calculation for Finland
-				$price_before_tax = $product->get_price_excluding_tax();
-				$line_tax = $item['line_tax'] / $item['quantity'];
-				$tax_status = $item['data']->tax_status;
-				$total = $item['data']->price;
-				$tax_percentage = round((($total-$price_before_tax)/$price_before_tax)*100);
-				$included = false;
-				if($price_before_tax == $total){
-					if($line_tax > 0 ){
-						$tax_percentage = ($line_tax /$price_before_tax)*100;
-						$included = true;
-					}else{
-						$this->tax = 9;
+			if ( sizeof( $order->get_items() ) > 0 ) {
+				foreach ( $order->get_items() as $item ) {
+					$item_net = round($order->get_line_subtotal( $item, false ),2);
+					$item_tax = round($order->get_line_tax( $item, false ),2);
+					$item_vat_perc = round($item_tax * 100 / $item_net);
+					$item_total = $order->get_item_total( $item, true );
+					$item_name = $item->get_name();
+					$item_quantity = $item->get_quantity();
+					//Convert tax percentage to Intrum's tax class id, eg one of (1,2,3,9,44,45,46)
+					switch ($item_vat_perc) {
+						case 10:
+							$this->tax = $this->tax_included ? 46 : 3;
+							break;
+						case 14:
+							$this->tax = $this->tax_included ? 45 : 2;
+							break;
+						case 24:
+							$this->tax = $this->tax_included ? 44 : 1;
+							break;
+						default:
+							$this->tax = 9; 
+							break;
 					}
-				}
-				if(!$line_subtotal==='taxable'){
-					$this->tax = 9;
-				}
-				if ($tax_percentage <12 &&  $tax_percentage > 1) {//just in case... 10%
-					if($included){
-						$this->tax = 46;
-					}else{
-						$this->tax = 3;
-					}
-				}
-				if ($tax_percentage >12 &&  $tax_percentage < 22) {//just in case... 14%
-					if($included){
-						$this->tax = 45;
-					}else{
-						$this->tax = 2;
-					}
-				}
-				if ($tax_percentage >22 ) {//just in case... 24%
-					if($included){
-						$this->tax = 44;
-					}else{
-						$this->tax = 1;
-					}
-				}
 
-				array_push($co_data['ProductList'], array(
-					"Product"=>$post->post_title,
-					"VatCode"=>$this->tax,
-					"UnitPrice"=>$item['data']->price,
-					"UnitAmount"=>$item['quantity']));
+					array_push($co_data['ProductList'], array(
+						"Product"=>$item_name,
+						"VatCode"=>$this->tax,
+						"UnitPrice"=>$item_total,
+						"UnitAmount"=>$item_quantity));
+				}
 			}
 
 			$co_data['SecretCode'] = $this->password;
