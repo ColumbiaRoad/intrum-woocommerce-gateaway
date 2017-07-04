@@ -280,8 +280,8 @@ function init_WC_Intrum_Gateway() {
 					$item_tax = round($order->get_line_tax( $item, false ),2);
 					$item_vat_perc = round($item_tax * 100 / $item_net);
 					$item_total = $order->get_item_total( $item, true );
-					$item_name = $item->get_name();
-					$item_quantity = $item->get_quantity();
+					$item_name = $item['name'];
+					$item_quantity = $item['item_meta']['_qty'][0];
 					//Convert tax percentage to Intrum's tax class id, eg one of (1,2,3,9,44,45,46)
 					switch ($item_vat_perc) {
 						case 10:
@@ -627,7 +627,10 @@ function payment_return_route( WP_REST_Request $request ) {
 }
 
 function create_return_url($status) {
-	$url = get_site_url() . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=" . $status;
+  //get_site_url might return site.com/path but we want only the domain site.com
+  $parsed_url = parse_url(get_site_url()); //PHP built-in function
+  $base_url = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+	$url = $base_url . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=" . $status;
 	return $url;
 }
 
