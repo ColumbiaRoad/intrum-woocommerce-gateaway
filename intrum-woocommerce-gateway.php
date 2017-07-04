@@ -256,7 +256,7 @@ function init_WC_Intrum_Gateway() {
 			$co_data['MerchantId'] = $this->merchant;
 			$co_data['CompanyId'] = $order_companyID;
 			$co_data['PersonId'] = $order_personID;
-			$co_data['OrderNumber'] = $order_id + 1000;
+			$co_data['OrderNumber'] = $order_id;
 			$co_data['ReturnAddress'] = create_return_url("success", $order_id);
 			$co_data['CancelAddress'] = create_return_url("cancel", $order_id);
 			$co_data['ErrorAddress'] = create_return_url("error", $order_id);
@@ -612,7 +612,7 @@ function payment_return_route( WP_REST_Request $request ) {
 
 	write_log($request);
 	if(!empty($request["OrderNumber"])) {
-		$order_id = $request["OrderNumber"] - 1000;
+		$order_id = $request["OrderNumber"];
 	} else {
 		// Fallback, we have no way to validate this value
 		$order_id = $request->get_param("order-id");
