@@ -245,10 +245,10 @@ function init_WC_Intrum_Gateway() {
 			$co_data['CompanyId'] = $order_companyID;
 			$co_data['PersonId'] = $order_personID;
 			$co_data['OrderNumber'] = $order_id;
-			$co_data['ReturnAddress'] = create_return_url("success");
-			$co_data['CancelAddress'] = create_return_url("cancel");
-			$co_data['ErrorAddress'] = create_return_url("cancel");
-			$co_data['InvokeAddress'] = create_return_url("success");
+			$co_data['ReturnAddress'] = create_return_url("success", $order_id);
+			$co_data['CancelAddress'] = create_return_url("cancel", $order_id);
+			$co_data['ErrorAddress'] = create_return_url("error", $order_id);
+			$co_data['InvokeAddress'] = create_return_url("success", $order_id);
 			$co_data['Language'] = $this->language;
 			$co_data['ReceiverName'] = $order_lastname;
 			$co_data['ReceiverFirstName'] = $order_firstname;
@@ -575,25 +575,37 @@ function check_signature_after_payment( WP_REST_Request $request ) {
 	$secret = WC_Intrum_Gateway::get_instance()->get_option('password');
 	$algorithm = parse_signature_algorithm($request['SignatureMethod']);
 
-	$sig_str = "{$request['OrderNumber']}&" .
-	"{$request['InvoiceReference']}&" .
-	"{$request['InstallmentCount']}&" .
-	"{$request['PayerName']}&";
-	if(!empty($request['PayerExtraAddressRow'])) $sig_str .= "{$request['PayerExtraAddressRow']}&";
-	$sig_str .="{$request['PayerStreetAddress']}&" .
-	"{$request['PayerCity']}&" .
-	"{$request['PayerZipCode']}&";
-	if(!empty($request['PayerCountryCode'])) $sig_str .= "{$request['PayerCountryCode']}&";
-	$sig_str .= "{$request['Version']}&" .
-	"{$request['ErrorCode']}&" .
-	"{$request['ErrorMessage']}&" .
-	"{$request['SignatureMethod']}&";
+	$fields = array(
+		'OrderNumber',
+		'InvoiceReference', 
+		'InstallmentCount',
+		'PayerName',
+		'PayerExtraAddressRow',
+		'PayerStreetAddress',
+		'PayerCity',
+		'PayerZipCode',
+		'PayerCountryCode',
+		'Version',
+		'ErrorCode',
+		'ErrorMessage',
+		'SignatureMethod',
+	);
+
+	$sig_str = "";
+	foreach($fields as $field) {
+		$val = $request[$field];
+		// PHP treats 'empty(0)' as true, therefore also check if value is numeric
+		if(!empty($val) || is_numeric($val)) {
+			$sig_str .= "$val&";
+		}
+	}
+
 	for ($i = 1; $i <= $request['InstallmentCount']; $i++) {
 		$sig_str .= "{$request["InstallmentDueDate$i"]}&" .
 		"{$request["InstallmentAmount$i"]}&";
 	}
 	$sig_str .= $secret;
-	
+
 	$signature = hash($algorithm, str_replace(' ', '', $sig_str));
 	return $request['Signature'] === $signature;
 }
@@ -603,38 +615,47 @@ function check_signature_after_payment( WP_REST_Request $request ) {
  * according https://docs.woocommerce.com/document/managing-orders/
  */
 function payment_return_route( WP_REST_Request $request ) {
-	$signature_match = check_signature_after_payment($request);
-	$order_id = $request["OrderNumber"];
+	$valid_request = check_signature_after_payment($request);
+
+	write_log($request);
+	if(!empty($request["OrderNumber"])) {
+		$order_id = $request["OrderNumber"];
+	} else {
+		// Fallback, we have no way to validate this value
+		$order_id = $request->get_param("order-id");
+	}
+
 	$order = new WC_Order($order_id);
-	if(!$signature_match) {
+	if($valid_request) {
+		$status = $request->get_param("status");
+		$redirect_url = "";
+
+		if($status === "success" && $request['ErrorCode'] == 0) {
+			$redirect_url = $order->get_checkout_order_received_url();
+			$order->payment_complete();
+		} else if($status === "cancel" && $request['ErrorCode'] == 4) {
+			// when user goes to cancel url, order will be cancelled			
+			$redirect_url = $order->get_cancel_order_url_raw();
+		} else {
+			// when user goes to cancel url, order will be cancelled
+			$redirect_url = $order->get_cancel_order_url_raw();
+			wc_add_notice( __( 'An error occurred while processing your payment.', 'intrum_wc_gateway' ), 'error' );
+			write_log("[INTRUM WC] Error: {$request['ErrorMessage']}");
+		}
+		error_log("REDIRECT TO: " . $redirect_url);
+		wp_redirect($redirect_url);
+		exit;
+	} else {
+		write_log('[INTURM WC] ERROR: Signatures did not match');		
 		$redirect_url = $order->get_cancel_order_url_raw();
+		wc_add_notice( __( 'The communication with the payment service failed', 'intrum_wc_gateway' ), 'error' );
 		wp_redirect($redirect_url);
 		exit;
 	}
-
-	$status = $request->get_param("status");
-	$redirect_url = "";
-	switch ($status) {
-		case "success":
-			$redirect_url = $order->get_checkout_order_received_url();
-			$order->payment_complete();
-			break;
-		case "cancel":
-			$redirect_url = $order->get_cancel_order_url_raw();
-			// when user goes to cancel url, order will be cancelled
-			break;
-		default:
-			$redirect_url = $order->get_cancel_order_url_raw();
-			// when user goes to cancel url, order will be cancelled
-			break;
-	}
-	error_log("REDIRECT TO: " . $redirect_url);
-	wp_redirect($redirect_url);
-	exit;
 }
 
-function create_return_url($status) {
-	$url = get_site_url() . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=" . $status;
+function create_return_url($status, $order_id) {
+	$url = get_site_url() . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=$status&order-id=$order_id";
 	return $url;
 }
 
