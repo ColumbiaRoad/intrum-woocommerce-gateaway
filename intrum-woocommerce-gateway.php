@@ -70,6 +70,7 @@ function init_WC_Intrum_Gateway() {
 		private $ooenabled = true;
 		private $pienabled = false;
 		private $debugmode = true;
+		private $tax_included = true;
 		// Debug server
 		private $serveraddress = " https://maksu.intrum.com/Invoice_Test/Company?";
 
@@ -94,6 +95,7 @@ function init_WC_Intrum_Gateway() {
 			$this->merchant = str_replace(' ', '', $this->merchant);
 			$this->password = $this->get_option('password');
 			$this->password = str_replace(' ', '', $this->password);
+			$this->tax_included = $this->get_option('tax_included');
  			if(strtolower($this->get_option('ooenabled'))=="no")$this->ooenabled = false;
  			if(strtolower($this->get_option('pienabled'))=="yes")$this->pienabled = true;
  			if(strtolower($this->get_option('debug'))=="no")$this->serveraddress = "https://maksu.intrum.com/Invoice/Company?";
@@ -211,6 +213,16 @@ function init_WC_Intrum_Gateway() {
 					'description' => __('Payment language (Automatic gets language from Wordpress. If Wordpress language is not Finnish or Swedish, then uses English)', 'intrum_wc_gateway'),
 					'default' => 'automatic'
 				),
+				'tax_included' => array(
+					'title' => __('Are taxes included or excluded in prices?', 'intrum_wc_gateway'),
+					'type' => 'select',
+					'options' => array(
+						true => __('Included', 'intrum_wc_gateway'),
+						false => __('Excluded', 'intrum_wc_gateway'),
+					),
+					'description' => __('Intrum needs this information for bill. ', 'intrum_wc_gateway'),
+					'default' => true
+				),
 			);
     }
 
@@ -244,7 +256,7 @@ function init_WC_Intrum_Gateway() {
 			$co_data['MerchantId'] = $this->merchant;
 			$co_data['CompanyId'] = $order_companyID;
 			$co_data['PersonId'] = $order_personID;
-			$co_data['OrderNumber'] = $order_id;
+			$co_data['OrderNumber'] = $order_id + 1000;
 			$co_data['ReturnAddress'] = create_return_url("success", $order_id);
 			$co_data['CancelAddress'] = create_return_url("cancel", $order_id);
 			$co_data['ErrorAddress'] = create_return_url("error", $order_id);
@@ -262,55 +274,36 @@ function init_WC_Intrum_Gateway() {
 			$co_data['InstallmentCount'] = 1;
 			$co_data['ProductList'] = array();
 
-			$i=1;
-			foreach($woocommerce->cart->cart_contents as $item){
-				$product = $item['data'];
-				$post = $item['data']->post;
-				//tax calculation for Finland
-				$price_before_tax = $product->get_price_excluding_tax();
-				$line_tax = $item['line_tax'] / $item['quantity'];
-				$tax_status = $item['data']->tax_status;
-				$total = $item['data']->price;
-				$tax_percentage = round((($total-$price_before_tax)/$price_before_tax)*100);
-				$included = false;
-				if($price_before_tax == $total){
-					if($line_tax > 0 ){
-						$tax_percentage = ($line_tax /$price_before_tax)*100;
-						$included = true;
-					}else{
-						$this->tax = 9;
+			if ( sizeof( $order->get_items() ) > 0 ) {
+				foreach ( $order->get_items() as $item ) {
+					$item_net = round($order->get_line_subtotal( $item, false ),2);
+					$item_tax = round($order->get_line_tax( $item, false ),2);
+					$item_vat_perc = round($item_tax * 100 / $item_net);
+					$item_total = $order->get_item_total( $item, true );
+					$item_name = $item['name'];
+					$item_quantity = $item['item_meta']['_qty'][0];
+					//Convert tax percentage to Intrum's tax class id, eg one of (1,2,3,9,44,45,46)
+					switch ($item_vat_perc) {
+						case 10:
+							$this->tax = $this->tax_included ? 46 : 3;
+							break;
+						case 14:
+							$this->tax = $this->tax_included ? 45 : 2;
+							break;
+						case 24:
+							$this->tax = $this->tax_included ? 44 : 1;
+							break;
+						default:
+							$this->tax = 9; 
+							break;
 					}
-				}
-				if(!$line_subtotal==='taxable'){
-					$this->tax = 9;
-				}
-				if ($tax_percentage <12 &&  $tax_percentage > 1) {//just in case... 10%
-					if($included){
-						$this->tax = 46;
-					}else{
-						$this->tax = 3;
-					}
-				}
-				if ($tax_percentage >12 &&  $tax_percentage < 22) {//just in case... 14%
-					if($included){
-						$this->tax = 45;
-					}else{
-						$this->tax = 2;
-					}
-				}
-				if ($tax_percentage >22 ) {//just in case... 24%
-					if($included){
-						$this->tax = 44;
-					}else{
-						$this->tax = 1;
-					}
-				}
 
-				array_push($co_data['ProductList'], array(
-					"Product"=>$post->post_title,
-					"VatCode"=>$this->tax,
-					"UnitPrice"=>$item['data']->price,
-					"UnitAmount"=>$item['quantity']));
+					array_push($co_data['ProductList'], array(
+						"Product"=>$item_name,
+						"VatCode"=>$this->tax,
+						"UnitPrice"=>$item_total,
+						"UnitAmount"=>$item_quantity));
+				}
 			}
 
 			$co_data['SecretCode'] = $this->password;
@@ -619,7 +612,7 @@ function payment_return_route( WP_REST_Request $request ) {
 
 	write_log($request);
 	if(!empty($request["OrderNumber"])) {
-		$order_id = $request["OrderNumber"];
+		$order_id = $request["OrderNumber"] - 1000;
 	} else {
 		// Fallback, we have no way to validate this value
 		$order_id = $request->get_param("order-id");
@@ -655,7 +648,14 @@ function payment_return_route( WP_REST_Request $request ) {
 }
 
 function create_return_url($status, $order_id) {
-	$url = get_site_url() . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=$status&order-id=$order_id";
+	if (strpos(get_site_url(), "localhost") !== false || strpos(get_site_url(), "127.0.0.1") !== false) {
+		$url = get_site_url() . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=$status&order-id=$order_id";
+	} else {
+		//get_site_url might return site.com/path but we want only the domain site.com
+		$parsed_url = parse_url(get_site_url()); //PHP built-in function
+		$base_url = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+		$url = $base_url . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=$status&order-id=$order_id";
+	}
 	return $url;
 }
 
