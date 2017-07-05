@@ -23,7 +23,7 @@ function init_WC_Intrum_Gateway() {
 	add_action( 'woocommerce_after_checkout_form', 'add_intrum_js');
 	add_action('rest_api_init', function() {
 		register_rest_route( 'intrum-woocommerce-gateway/v1', '/payment', array(
-			'methods'  => 'POST',
+			'methods'  => 'POST, GET',
 			'callback' => 'payment_return_route',
 			)
 		);
@@ -615,6 +615,10 @@ function check_signature_after_payment( WP_REST_Request $request ) {
  */
 function payment_return_route( WP_REST_Request $request ) {
 	$valid_request = check_signature_after_payment($request);
+
+	if (empty($algorithm)) {
+		return false; // cannot even check signature
+	}
 
 	write_log($request);
 	if(!empty($request["OrderNumber"])) {
