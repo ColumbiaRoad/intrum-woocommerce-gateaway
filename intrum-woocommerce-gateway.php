@@ -621,12 +621,7 @@ function payment_return_route( WP_REST_Request $request ) {
 	}
 
 	write_log($request);
-	if(!empty($request["OrderNumber"])) {
-		$order_id = $request["OrderNumber"];
-	} else {
-		// Fallback, we have no way to verify this value
-		$order_id = $request->get_param("order-id");
-	}
+	$order_id = $request->get_param("order-id");
 
 	$order = new WC_Order($order_id);
 	if($valid_request) {
@@ -642,7 +637,7 @@ function payment_return_route( WP_REST_Request $request ) {
 		} else {
 			// when user goes to cancel url, order will be cancelled
 			$redirect_url = $order->get_cancel_order_url_raw();
-			wc_add_notice( __( 'An error occurred while processing your payment.', 'intrum_wc_gateway' ), 'error' );
+			//wc_add_notice( __( 'An error occurred while processing your payment.', 'intrum_wc_gateway' ), 'error' );
 			write_log("[INTRUM WC] Error: {$request['ErrorMessage']}");
 		}
 		error_log("REDIRECT TO: " . $redirect_url);
@@ -651,7 +646,7 @@ function payment_return_route( WP_REST_Request $request ) {
 	} else {
 		write_log('[INTURM WC] ERROR: Signatures did not match');
 		$redirect_url = $order->get_cancel_order_url_raw();
-		wc_add_notice( __( 'The communication with the payment service failed', 'intrum_wc_gateway' ), 'error' );
+		//wc_add_notice( __( 'The communication with the payment service failed', 'intrum_wc_gateway' ), 'error' );
 		wp_redirect($redirect_url);
 		exit;
 	}
