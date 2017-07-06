@@ -574,6 +574,10 @@ function check_signature_after_payment( WP_REST_Request $request ) {
 	$secret = WC_Intrum_Gateway::get_instance()->get_option('password');
 	$algorithm = parse_signature_algorithm($request['SignatureMethod']);
 
+	if (empty($algorithm)) {
+		return false; // cannot even check signature
+	}
+
 	$fields = array(
 		'OrderNumber',
 		'InvoiceReference',
@@ -615,10 +619,6 @@ function check_signature_after_payment( WP_REST_Request $request ) {
  */
 function payment_return_route( WP_REST_Request $request ) {
 	$valid_request = check_signature_after_payment($request);
-
-	if (empty($algorithm)) {
-		return false; // cannot even check signature
-	}
 
 	write_log($request);
 	$order_id = $request->get_param("order-id");
