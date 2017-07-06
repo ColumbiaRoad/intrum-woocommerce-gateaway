@@ -300,7 +300,7 @@ function init_WC_Intrum_Gateway() {
 							$this->tax = $this->tax_included ? 44 : 1;
 							break;
 						default:
-							$this->tax = 9; 
+							$this->tax = 9;
 							break;
 					}
 
@@ -396,7 +396,7 @@ function init_WC_Intrum_Gateway() {
 			"{$data['SignatureMethod']}&" .
 			"{$this->get_product_detail_values($data)}&" .
 			$data['SecretCode'];
-			
+
 			$algorithm = parse_signature_algorithm($data['SignatureMethod']);
 
 			return hash($algorithm, str_replace(' ', '', $sig));
@@ -436,7 +436,7 @@ function init_WC_Intrum_Gateway() {
 			return rtrim($details, "&");
 		}
 
-		/** 
+		/**
 		 * Wrapper for built-in 'urlencode', so it can be neatly called within HEREDOC strings
 		 */
 		private function urlencode($str) {
@@ -477,7 +477,7 @@ function add_company_id_field( $fields ) {
 		foreach($ordered as $field){
 			$ordered_fields[$field] = $fields["billing"][$field];
 		}
-		$fields["billing"] = $ordered_fields;		
+		$fields["billing"] = $ordered_fields;
 	}
 	return $fields;
 }
@@ -555,7 +555,7 @@ function intrum_checkout_person_id_process() {
 }
 
 /**
- * Print to error log. 
+ * Print to error log.
  * Helper function for debugging
  */
 function write_log ( $log )  {
@@ -576,7 +576,7 @@ function check_signature_after_payment( WP_REST_Request $request ) {
 
 	$fields = array(
 		'OrderNumber',
-		'InvoiceReference', 
+		'InvoiceReference',
 		'InstallmentCount',
 		'PayerName',
 		'PayerExtraAddressRow',
@@ -624,7 +624,7 @@ function payment_return_route( WP_REST_Request $request ) {
 	if(!empty($request["OrderNumber"])) {
 		$order_id = $request["OrderNumber"];
 	} else {
-		// Fallback, we have no way to validate this value
+		// Fallback, we have no way to verify this value
 		$order_id = $request->get_param("order-id");
 	}
 
@@ -637,7 +637,7 @@ function payment_return_route( WP_REST_Request $request ) {
 			$redirect_url = $order->get_checkout_order_received_url();
 			$order->payment_complete();
 		} else if($status === "cancel" && $request['ErrorCode'] == 4) {
-			// when user goes to cancel url, order will be cancelled			
+			// when user goes to cancel url, order will be cancelled
 			$redirect_url = $order->get_cancel_order_url_raw();
 		} else {
 			// when user goes to cancel url, order will be cancelled
@@ -649,7 +649,7 @@ function payment_return_route( WP_REST_Request $request ) {
 		wp_redirect($redirect_url);
 		exit;
 	} else {
-		write_log('[INTURM WC] ERROR: Signatures did not match');		
+		write_log('[INTURM WC] ERROR: Signatures did not match');
 		$redirect_url = $order->get_cancel_order_url_raw();
 		wc_add_notice( __( 'The communication with the payment service failed', 'intrum_wc_gateway' ), 'error' );
 		wp_redirect($redirect_url);
