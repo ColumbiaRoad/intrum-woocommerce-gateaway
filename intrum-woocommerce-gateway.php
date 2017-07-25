@@ -552,6 +552,10 @@ function intrum_checkout_person_id_process() {
 	if ( isset($_POST['billing_person_ID']) && !$_POST['billing_person_ID'] && ($_POST['payment_method'] == 'wc_intrum_gateway')) {
 		wc_add_notice( __( 'Please enter value for Person ID.','intrum_wc_gateway' ), 'error' );
 	}
+	if (isset($_POST['billing_person_ID']) && $_POST['billing_person_ID'] &&
+		($_POST['payment_method'] == 'wc_intrum_gateway') && !person_id_ok($_POST['billing_person_ID'])) {
+		wc_add_notice( __( 'Henkilötunnus on virheellinen. Tarkista henkilötunnus.','intrum_wc_gateway' ), 'error' );
+	}
 }
 
 /**
@@ -684,5 +688,23 @@ function version_check( $version = '3.0' ) {
 		}
 	}
 	return false;
+}
+
+/**
+* https://fi.wikipedia.org/wiki/Henkil%C3%B6tunnus
+*/
+function person_id_ok($person_id) {
+	if (strlen($person_id) != 11) return false;
+	if (!is_numeric(substr($person_id, 0, 6))) return false;
+	if (substr($person_id, 0, 2) > 31) return false;
+	if (substr($person_id, 2, 2) > 12) return false;
+	if (!in_array(substr($person_id, 6, 1), array('+','-','A'))) return false;
+	$modulo = (substr($person_id, 0, 6) . substr($person_id, 7, 3)) % 31;
+	$check_char = substr($person_id, 10, 1);
+	$check_chars =array(
+		0,1,2,3,4,5,6,7,8,9,'A','B','C','D','E','F',
+		'H','J','K','L','M','N','P','R','S','T','U','V','W','X','Y'
+	);
+	return $check_chars[$modulo] == $check_char;
 }
 ?>
