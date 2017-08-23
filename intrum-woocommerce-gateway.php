@@ -3,7 +3,7 @@
 * Plugin Name: Intrum Justitia Woocommerce Gateway
 * Description: Intrum Justitia gateway for Woocommerce
 * Version: 1.4
-* Author: Columbia Road Oy
+* Author: Intrum
 */
 // Prevent direct access
 if (!defined('ABSPATH')) {
@@ -552,9 +552,11 @@ function intrum_checkout_person_id_process() {
 	if ( isset($_POST['billing_person_ID']) && !$_POST['billing_person_ID'] && ($_POST['payment_method'] == 'wc_intrum_gateway')) {
 		wc_add_notice( __( 'Please enter value for Person ID.','intrum_wc_gateway' ), 'error' );
 	}
-	if (isset($_POST['billing_person_ID']) && $_POST['billing_person_ID'] &&
-		($_POST['payment_method'] == 'wc_intrum_gateway') && !person_id_ok($_POST['billing_person_ID'])) {
-		wc_add_notice( __( 'Henkilötunnus on virheellinen. Tarkista henkilötunnus.','intrum_wc_gateway' ), 'error' );
+	if(WC_Intrum_Gateway::get_instance()->get_option('debug')=="no") { // enable bad user id in test mode
+		if (isset($_POST['billing_person_ID']) && $_POST['billing_person_ID'] &&
+			($_POST['payment_method'] == 'wc_intrum_gateway') && !person_id_ok($_POST['billing_person_ID'])) {
+			wc_add_notice( __( 'Henkilötunnus on virheellinen. Tarkista henkilötunnus.','intrum_wc_gateway' ), 'error' );
+		}
 	}
 }
 
@@ -706,5 +708,87 @@ function person_id_ok($person_id) {
 		'H','J','K','L','M','N','P','R','S','T','U','V','W','X','Y'
 	);
 	return $check_chars[$modulo] == $check_char;
+}
+
+function str_utf8_decode($str) {
+  $utf8_ansi2 = array(
+  "%u00c0" =>"À",
+  "%u00c1" =>"Á",
+  "%u00c2" =>"Â",
+  "%u00c3" =>"Ã",
+  "%u00c4" =>"Ä",
+  "%u00c5" =>"Å",
+  "%u00c6" =>"Æ",
+  "%u00c7" =>"Ç",
+  "%u00c8" =>"È",
+  "%u00c9" =>"É",
+  "%u00ca" =>"Ê",
+  "%u00cb" =>"Ë",
+  "%u00cc" =>"Ì",
+  "%u00cd" =>"Í",
+  "%u00ce" =>"Î",
+  "%u00cf" =>"Ï",
+  "%u00d1" =>"Ñ",
+  "%u00d2" =>"Ò",
+  "%u00d3" =>"Ó",
+  "%u00d4" =>"Ô",
+  "%u00d5" =>"Õ",
+  "%u00d6" =>"Ö",
+  "%u00d8" =>"Ø",
+  "%u00d9" =>"Ù",
+  "%u00da" =>"Ú",
+  "%u00db" =>"Û",
+  "%u00dc" =>"Ü",
+  "%u00dd" =>"Ý",
+  "%u00df" =>"ß",
+  "%u00e0" =>"à",
+  "%u00e1" =>"á",
+  "%u00e2" =>"â",
+  "%u00e3" =>"ã",
+  "%u00e4" =>"ä",
+  "%u00e5" =>"å",
+  "%u00e6" =>"æ",
+  "%u00e7" =>"ç",
+  "%u00e8" =>"è",
+  "%u00e9" =>"é",
+  "%u00ea" =>"ê",
+  "%u00eb" =>"ë",
+  "%u00ec" =>"ì",
+  "%u00ed" =>"í",
+  "%u00ee" =>"î",
+  "%u00ef" =>"ï",
+  "%u00f0" =>"ð",
+  "%u00f1" =>"ñ",
+  "%u00f2" =>"ò",
+  "%u00f3" =>"ó",
+  "%u00f4" =>"ô",
+  "%u00f5" =>"õ",
+  "%u00f6" =>"ö",
+  "%u00f8" =>"ø",
+  "%u00f9" =>"ù",
+  "%u00fa" =>"ú",
+  "%u00fb" =>"û",
+  "%u00fc" =>"ü",
+  "%u00fd" =>"ý",
+  "%u00ff" =>"ÿ");
+
+  $utf8_len = 6; // UTF-8 chars like %u00e4 have length of six
+  if(strlen($str) < $utf8_len) {
+	return $str;
+  }
+  $splitted = preg_split("/[%]...../", $str); // Jyv%u00e4skyl%u00e4
+  if(count($splitted) == 1) { // Contains no utf-8 encoded substrings
+  	return $str;
+  }
+  $i = 0;
+  $new_str = "";
+  foreach ($splitted as $split) {
+	$new_str .= $split;
+	$i += strlen($split);
+	$utf8_char = substr($str, $i, $utf8_len);
+	$new_str .= $utf8_ansi2[$utf8_char];
+	$i += $utf8_len;
+  }
+  return $new_str;
 }
 ?>
