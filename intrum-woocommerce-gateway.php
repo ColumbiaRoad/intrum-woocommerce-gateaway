@@ -20,7 +20,7 @@ function init_WC_Intrum_Gateway() {
 	add_action('woocommerce_checkout_update_order_meta', 'intrum_checkout_field_update_order_meta' );
  	add_action('woocommerce_checkout_process', 'intrum_checkout_person_id_process');
 	add_action('woocommerce_checkout_process', 'intrum_checkout_company_id_process');
-	add_action( 'woocommerce_after_checkout_form', 'add_intrum_js');
+	add_action('woocommerce_after_checkout_form', 'add_intrum_js');
 	add_action('rest_api_init', function() {
 		register_rest_route( 'intrum-woocommerce-gateway/v1', '/payment', array(
 			'methods'  => 'POST, GET',
@@ -85,11 +85,10 @@ function init_WC_Intrum_Gateway() {
 
 			$this->has_fields = false;
 
-			$this->method_title = __('Intrum Justitia Yrityslasku', 'intrum_wc_gateway');
-			$this->method_description = __('Pay all at once or in installments', 'intrum_wc_gateway');
+			$this->method_title = __('Intrum', 'intrum_wc_gateway');
+			$this->method_description = __('', 'intrum_wc_gateway');
 
 			$this->title = $this->get_option('title');
-			$this->description = $this->get_option('title'). " - " . $this->get_option('description');
 			$this->notify_url = WC()->api_request_url('WC_Intrum_Gateway');
 			$this->merchant = $this->get_option('merchant');
 			$this->merchant = str_replace(' ', '', $this->merchant);
@@ -131,13 +130,13 @@ function init_WC_Intrum_Gateway() {
     }
 
 		public function get_icon() {
-			$icon_html = "<img style='margin:0;width:150px;height:auto;' src='".plugins_url( 'yrityslasku_logopainike.png' , __FILE__ ). "' /><a style='float:right;font-size:.83em;' href='https://www.intrum.com/fi/fi/palvelut-yrityksille/verkkokauppa--ja-myymalaratkaisut/yrityslasku/'>".__('What is Yrityslasku?', 'intrum_wc_gateway'). "</a>";
+			$icon_html = "<img style='margin:0;margin-left:5px;width:150px;height:auto;' src='".plugins_url( 'Intrum_Logo_RGB_Black.png' , __FILE__ ). "' />";
 			return apply_filters( 'woocommerce_gateway_icon', $icon_html, $this->id );
 		}
 
     function admin_options() {
-			echo "<h3><img style='margin:0;width:300px;height:auto;' src='".plugins_url( 'yrityslasku_logopainike.png' , __FILE__ ). "' /><br>";
-      echo  __('Intrum Justitia Yrityslasku for Woocommerce', 'intrum_wc_gateway') . '</h3>';
+			echo "<h3><img style='margin:0;width:300px;height:auto;' src='".plugins_url( 'Intrum_Logo_RGB_Black.png' , __FILE__ ). "' /><br>";
+      echo  __('Intrum for Woocommerce', 'intrum_wc_gateway') . '</h3>';
       echo '<table class="form-table">';
       $this->generate_settings_html();
       echo '</table>';
@@ -241,6 +240,7 @@ function init_WC_Intrum_Gateway() {
 			$order_data = get_post_meta($order_id);
 			$order_firstname = $order_data["_billing_first_name"][0];
 			$order_lastname = $order_data["_billing_last_name"][0];
+			$order_company = $order_data["_billing_company"][0];
 			$order_companyID = $order_data["_billing_company_ID"][0];
 			$order_personID = $order_data["_billing_person_ID"][0];
 			$order_adress = $order_data["_billing_address_1"][0];
@@ -256,6 +256,7 @@ function init_WC_Intrum_Gateway() {
 			$co_data['MerchantId'] = $this->merchant;
 			$co_data['CompanyId'] = $order_companyID;
 			$co_data['PersonId'] = $order_personID;
+			$co_data['Company'] = $order_company;
 			$co_data['OrderNumber'] = $order_id;
 			$co_data['ReturnAddress'] = create_return_url("success", $order_id);
 			$co_data['CancelAddress'] = create_return_url("cancel", $order_id);
@@ -320,7 +321,7 @@ function init_WC_Intrum_Gateway() {
     function process_payment($order_id) {
 			global $woocommerce;
 			$order = new WC_Order($order_id);
-			$order->update_status('pending', __( 'Yrityslasku is pending', 'intrum_wc_gateway' ));
+			$order->update_status('pending', __( 'Intrum is pending', 'intrum_wc_gateway' ));
             return array(
                 'result' => 'success',
                 'redirect' => $order->get_checkout_payment_url(true)
@@ -347,12 +348,11 @@ function init_WC_Intrum_Gateway() {
 			"&ErrorAddress={$this->urlencode($data['ErrorAddress'])}" .
 			"&InvokeAddress={$this->urlencode($data['InvokeAddress'])}" .
 			"&Language={$data['Language']}" .
-			"&InvoiceName={$data['ReceiverName']}" .
-			"&InvoiceFirstName={$data['ReceiverFirstName']}" .
+			"&InvoiceName={$data['Company']}" .
 			"&InvoiceStreetAddress={$data['ReceiverStreetAddress']}" .
 			"&InvoiceExtraAddressRow={$data['ReceiverExtraAddressRow']}" .
 			"&InvoiceCity={$data['ReceiverCity']}" .
-			"&InvoiceZipCode={$data['ReceiverZipCode']}";
+			"&InvoiceZipCode={$data['ReceiverZipCode']}" .
 			"&InvoiceCountryCode={$data['ReceiverCountryCode']}";
 			if(!$this->ooenabled && !$this->pienabled) {
 				$query .= "&CompanyId={$data['CompanyId']}";
@@ -461,6 +461,11 @@ function add_company_id_field( $fields ) {
 		$fields['billing']['billing_company_ID']['placeholder'] = __('1234567-8', 'intrum_wc_gateway');
 		$fields['billing']['billing_company_ID']['label'] = __('Company ID', 'intrum_wc_gateway');
 		$fields['billing']['billing_company_ID']['required'] = true;
+
+		$fields['billing']['billing_first_name']['required'] = FALSE;
+		$fields['billing']['billing_last_name']['required'] = FAlSE;
+		$fields['billing']['billing_company']['required'] = TRUE;
+
 		$ordered = array(
 			"billing_first_name",
 			"billing_last_name",
@@ -485,7 +490,7 @@ function add_company_id_field( $fields ) {
 function add_person_and_company_id_fields( $fields ) {
 	 $fields['billing']['billing_person_ID'] = array(
 		 'label' => __('Person ID', 'intrum_wc_gateway'),
-		 'placeholder' => __('120380-123C', 'intrum_wc_gateway'),
+		 'placeholder' => __('130380-123C', 'intrum_wc_gateway'),
 		 'required' => true,
 		 'class' => array('form-row-wide'),
 		 'clear' => true
@@ -498,6 +503,10 @@ function add_person_and_company_id_fields( $fields ) {
 		 'class' => array('form-row-wide'),
 		 'clear' => true
 	 );
+
+		$fields['billing']['billing_first_name']['required'] = FALSE;
+		$fields['billing']['billing_last_name']['required'] = FAlSE;
+		$fields['billing']['billing_company']['required'] = TRUE;
 
 	 $ordered = array(
 		"billing_first_name",
@@ -663,8 +672,7 @@ function create_return_url($status, $order_id) {
 		$url = get_site_url() . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=$status&order-id=$order_id";
 	} else {
 		//get_site_url might return site.com/path but we want only the domain site.com
-		$parsed_url = parse_url(get_site_url()); //PHP built-in function
-		$base_url = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+		$base_url = get_site_url();
 		$url = $base_url . "/wp-json/intrum-woocommerce-gateway/v1/payment?status=$status&order-id=$order_id";
 	}
 	return $url;
