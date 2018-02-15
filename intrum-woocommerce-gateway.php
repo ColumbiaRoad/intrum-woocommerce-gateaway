@@ -256,15 +256,15 @@ function init_WC_Intrum_Gateway() {
 			$co_data['MerchantId'] = $this->merchant;
 			$co_data['CompanyId'] = $order_companyID;
 			$co_data['PersonId'] = $order_personID;
-			$co_data['Company'] = $order_company;
+			$co_data['CompanyName'] = $order_company;
 			$co_data['OrderNumber'] = $order_id;
 			$co_data['ReturnAddress'] = create_return_url("success", $order_id);
 			$co_data['CancelAddress'] = create_return_url("cancel", $order_id);
 			$co_data['ErrorAddress'] = create_return_url("error", $order_id);
 			$co_data['InvokeAddress'] = create_return_url("success", $order_id);
 			$co_data['Language'] = $this->language;
-			$co_data['ReceiverName'] = $order_lastname;
-			$co_data['ReceiverFirstName'] = $order_firstname;
+			$co_data['PersonLastName'] = $order_lastname;
+			$co_data['PersonFirstName'] = $order_firstname;
 			$co_data['ReceiverExtraAddressRow'] = $order_adress2;
 			$co_data['ReceiverStreetAddress'] = $order_adress;
 			$co_data['ReceiverCity'] = $order_city;
@@ -348,7 +348,7 @@ function init_WC_Intrum_Gateway() {
 			"&ErrorAddress={$this->urlencode($data['ErrorAddress'])}" .
 			"&InvokeAddress={$this->urlencode($data['InvokeAddress'])}" .
 			"&Language={$data['Language']}" .
-			"&InvoiceName={$data['Company']}" .
+			"&InvoiceName={$data['CompanyName']}" .
 			"&InvoiceStreetAddress={$data['ReceiverStreetAddress']}" .
 			"&InvoiceExtraAddressRow={$data['ReceiverExtraAddressRow']}" .
 			"&InvoiceCity={$data['ReceiverCity']}" .
@@ -491,7 +491,7 @@ function add_person_and_company_id_fields( $fields ) {
 	 $fields['billing']['billing_person_ID'] = array(
 		 'label' => __('Person ID', 'intrum_wc_gateway'),
 		 'placeholder' => __('130380-123C', 'intrum_wc_gateway'),
-		 'required' => true,
+		 'required' => FALSE,
 		 'class' => array('form-row-wide'),
 		 'clear' => true
 	 );
@@ -499,14 +499,10 @@ function add_person_and_company_id_fields( $fields ) {
 	 $fields['billing']['billing_company_ID'] = array(
 		 'label' => __('Company ID', 'intrum_wc_gateway'),
 		 'placeholder' => __('1234567-8', 'intrum_wc_gateway'),
-		 'required' => true,
+		 'required' => TRUE,
 		 'class' => array('form-row-wide'),
 		 'clear' => true
 	 );
-
-		$fields['billing']['billing_first_name']['required'] = FALSE;
-		$fields['billing']['billing_last_name']['required'] = FAlSE;
-		$fields['billing']['billing_company']['required'] = TRUE;
 
 	 $ordered = array(
 		"billing_first_name",
