@@ -554,9 +554,12 @@ function intrum_checkout_person_id_process() {
 	if(WC()->session->chosen_payment_method=='wc_intrum_gateway') {
 		load_plugin_textdomain('intrum_wc_gateway', false, dirname( plugin_basename( __FILE__ ) ) . '/languages');
 	}
-	if ( isset($_POST['billing_person_ID']) && !$_POST['billing_person_ID'] && ($_POST['payment_method'] == 'wc_intrum_gateway')) {
-		wc_add_notice( __( 'Please enter value for Person ID.','intrum_wc_gateway' ), 'error' );
+	if(WC_Intrum_Gateway::get_instance()->get_option('pienabled') == 'no' ) { // if skip tupas is enabled.
+		if ( isset($_POST['billing_person_ID']) && !$_POST['billing_person_ID'] && ($_POST['payment_method'] == 'wc_intrum_gateway')) {
+			wc_add_notice( __( 'Please enter value for Person ID.','intrum_wc_gateway' ), 'error' );
+		}
 	}
+
 	if(WC_Intrum_Gateway::get_instance()->get_option('debug')=="no") { // enable bad user id in test mode
 		if (isset($_POST['billing_person_ID']) && $_POST['billing_person_ID'] &&
 			($_POST['payment_method'] == 'wc_intrum_gateway') && !person_id_ok($_POST['billing_person_ID'])) {
