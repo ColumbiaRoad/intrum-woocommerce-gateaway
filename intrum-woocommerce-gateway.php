@@ -2,7 +2,7 @@
 /**
 * Plugin Name: Intrum Justitia Woocommerce Gateway
 * Description: Intrum Justitia gateway for Woocommerce
-* Version: 1.4
+* Version: 1.4.1
 * Author: Intrum
 */
 // Prevent direct access
@@ -348,7 +348,7 @@ function init_WC_Intrum_Gateway() {
 			"&ErrorAddress={$this->urlencode($data['ErrorAddress'])}" .
 			"&InvokeAddress={$this->urlencode($data['InvokeAddress'])}" .
 			"&Language={$data['Language']}" .
-			"&InvoiceName={$data['CompanyName']}" .
+			"&CompanyName={$data['CompanyName']}" .
 			"&InvoiceStreetAddress={$data['ReceiverStreetAddress']}" .
 			"&InvoiceExtraAddressRow={$data['ReceiverExtraAddressRow']}" .
 			"&InvoiceCity={$data['ReceiverCity']}" .
@@ -360,7 +360,9 @@ function init_WC_Intrum_Gateway() {
 			if($this->pienabled) {
 				$query .= "&SkipTupasAuthentication=true" .
 				"&PersonId={$data['PersonId']}" .
-				"&CompanyId={$data['CompanyId']}";
+				"&CompanyId={$data['CompanyId']}" .
+				"&PersonFirstName={$data['PersonFirstName']}" .
+				"&PersonLastName={$data['PersonLastName']}";
 			}
 			$query .= "&InvoiceRowCount={$data['InvoiceRowCount']}" .
 			"&SignatureMethod={$data['SignatureMethod']}" .
